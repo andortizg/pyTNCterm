@@ -1,0 +1,67 @@
+{
+  "model": "Kantronics KPC-3 / KPC-3+",
+  "categories": {
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call} [VIA {digi1},{digi2}]"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect current session", "syntax": "D"},
+      {"cmd": "RECONNECT", "type": "text", "desc": "Reconnect to last station", "syntax": "C"}
+    ],
+    "Mode Control": [
+      {"cmd": "Command mode", "type": "key", "desc": "Return to command mode (Ctrl+C)", "key": "ctrl+C"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse mode", "syntax": "CONV"},
+      {"cmd": "TRANSPARENT", "type": "text", "desc": "Enter transparent mode", "syntax": "TRANS"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Monitor level (0=off, 1-6)", "syntax": "MON {n}"},
+      {"cmd": "MCOM", "type": "text", "desc": "Monitor while connected", "syntax": "MCOM ON|OFF"},
+      {"cmd": "MCON", "type": "text", "desc": "Monitor only connected stations", "syntax": "MCON ON|OFF"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations list", "syntax": "MH"},
+      {"cmd": "MHCLEAR", "type": "text", "desc": "Clear heard stations list", "syntax": "MHC"},
+      {"cmd": "HEADERLN", "type": "text", "desc": "Separate header from data", "syntax": "HEADERLN ON|OFF"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "MYALIAS", "type": "text", "desc": "Set alias callsign", "syntax": "MYALIAS {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo on/off", "syntax": "ECHO ON|OFF"},
+      {"cmd": "AUTOLF", "type": "text", "desc": "Auto line feed after CR", "syntax": "AUTOLF ON|OFF"},
+      {"cmd": "FLOW", "type": "text", "desc": "Software flow control on/off", "syntax": "FLOW ON|OFF"},
+      {"cmd": "XFLOW", "type": "text", "desc": "XON/XOFF flow control", "syntax": "XFLOW ON|OFF"},
+      {"cmd": "BEACON", "type": "text", "desc": "Set beacon text", "syntax": "BTEXT {text}"},
+      {"cmd": "BEACON EVERY", "type": "text", "desc": "Beacon interval (0=off, in 10s units)", "syntax": "BEACON EVERY {n}"},
+      {"cmd": "UNPROTO", "type": "text", "desc": "Set unproto path", "syntax": "UNPROTO {path}"},
+      {"cmd": "INTERFACE", "type": "text", "desc": "Set terminal interface type", "syntax": "INT TERMINAL|KISS|HOST"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet data length (0-255)", "syntax": "PACLEN {n}"},
+      {"cmd": "MAXFRAME", "type": "text", "desc": "Max outstanding I-frames (1-7)", "syntax": "MAXFRAME {n}"},
+      {"cmd": "FRACK", "type": "text", "desc": "Frame acknowledge timeout (1-15 sec)", "syntax": "FRACK {n}"},
+      {"cmd": "RETRY", "type": "text", "desc": "Max retries (0-15, 0=infinite)", "syntax": "RETRY {n}"},
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay in 10ms units", "syntax": "TXDELAY {n}"},
+      {"cmd": "PERSIST", "type": "text", "desc": "Persistence (0-255)", "syntax": "PERSIST {n}"},
+      {"cmd": "SLOTTIME", "type": "text", "desc": "Slot time in 10ms units", "syntax": "SLOTTIME {n}"},
+      {"cmd": "DWAIT", "type": "text", "desc": "Delay before transmit", "syntax": "DWAIT {n}"},
+      {"cmd": "CHECK", "type": "text", "desc": "Inactivity timeout (secs, 0=off)", "syntax": "CHECK {n}"},
+      {"cmd": "DIGIPEAT", "type": "text", "desc": "Digipeater function on/off", "syntax": "DIGIPEAT ON|OFF"},
+      {"cmd": "NOMODE", "type": "text", "desc": "Disable automatic mode switching", "syntax": "NOMODE ON|OFF"}
+    ],
+    "Digipeater": [
+      {"cmd": "DIGI", "type": "text", "desc": "Enable digipeater", "syntax": "DIGI ON|OFF"},
+      {"cmd": "HID", "type": "text", "desc": "Send station ID at intervals", "syntax": "HID ON|OFF"},
+      {"cmd": "LTP", "type": "text", "desc": "Last two path digipeating", "syntax": "LTP ON|OFF"}
+    ],
+    "GPS / APRS": [
+      {"cmd": "GPSTEXT", "type": "text", "desc": "Set GPS beacon text format", "syntax": "GPSTEXT {format}"},
+      {"cmd": "LTEXT", "type": "text", "desc": "Set location beacon text", "syntax": "LT {text}"},
+      {"cmd": "NAVTEXT", "type": "text", "desc": "Enable GPS sentence output", "syntax": "NAV ON|OFF"}
+    ],
+    "Information": [
+      {"cmd": "DISPLAY", "type": "text", "desc": "Display all current settings", "syntax": "DISP"},
+      {"cmd": "CALIBRATE", "type": "text", "desc": "Enter calibration mode", "syntax": "CAL"},
+      {"cmd": "FIRMWARE", "type": "text", "desc": "Show firmware version", "syntax": "DISP F"}
+    ],
+    "Reset": [
+      {"cmd": "RESET", "type": "text", "desc": "Reset to factory defaults", "syntax": "RESET"},
+      {"cmd": "RESTORE", "type": "text", "desc": "Restore saved parameters", "syntax": "RESTORE"}
+    ]
+  }
+}

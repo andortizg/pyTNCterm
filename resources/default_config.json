@@ -1,0 +1,51 @@
+{
+    "station": {
+        "callsign": "",
+        "grid_locator": "",
+        "name": ""
+    },
+    "serial": {
+        "port": "",
+        "baudrate": 9600,
+        "databits": 8,
+        "stopbits": 1,
+        "parity": "None",
+        "flow_control": "None"
+    },
+    "appearance": {
+        "font_family": "Consolas",
+        "font_size": 11,
+        "monitor": {
+            "bg_color": "#0a1929",
+            "text_color": "#4fc3f7",
+            "info_color": "#ffd54f",
+            "error_color": "#ef5350"
+        },
+        "channel": {
+            "bg_color": "#0d1b2a",
+            "rx_color": "#e0e0e0",
+            "tx_color": "#00e676",
+            "system_color": "#ffd54f"
+        },
+        "input": {
+            "bg_color": "#1a1a2e",
+            "text_color": "#00e676",
+            "prompt_color": "#4fc3f7"
+        },
+        "statusbar": {
+            "bg_color": "#1b2838",
+            "text_color": "#b0bec5"
+        }
+    },
+    "paths": {
+        "yapp_download": "",
+        "yapp_upload": "",
+        "log_directory": ""
+    },
+    "window": {
+        "width": 900,
+        "height": 700,
+        "x": -1,
+        "y": -1
+    }
+}

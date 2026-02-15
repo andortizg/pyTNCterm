@@ -1,0 +1,40 @@
+{
+  "model": "AEA PK-88",
+  "categories": {
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call} [V {digi1},{digi2}]"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect", "syntax": "D"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse mode", "syntax": "K"}
+    ],
+    "Mode Control": [
+      {"cmd": "Command mode", "type": "key", "desc": "Return to command mode (Ctrl+C)", "key": "ctrl+C"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Monitor on/off", "syntax": "MON ON|OFF"},
+      {"cmd": "MCOM", "type": "text", "desc": "Monitor while connected", "syntax": "MCOM ON|OFF"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations", "syntax": "MH"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo", "syntax": "ECHO ON|OFF"},
+      {"cmd": "UNPROTO", "type": "text", "desc": "Unproto path", "syntax": "UNPROTO {path}"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet length", "syntax": "PACLEN {n}"},
+      {"cmd": "MAXFRAME", "type": "text", "desc": "Max outstanding frames", "syntax": "MAXFRAME {n}"},
+      {"cmd": "FRACK", "type": "text", "desc": "Frame ack timeout", "syntax": "FRACK {n}"},
+      {"cmd": "RETRY", "type": "text", "desc": "Max retries", "syntax": "RETRY {n}"},
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay", "syntax": "TXDELAY {n}"}
+    ],
+    "Special Keys": [
+      {"cmd": "Ctrl+C", "type": "key", "desc": "Command mode", "key": "ctrl+C"},
+      {"cmd": "Break", "type": "key", "desc": "Send BREAK", "key": "break"}
+    ],
+    "Information": [
+      {"cmd": "DISPLAY", "type": "text", "desc": "Display settings", "syntax": "DISP"}
+    ],
+    "Reset": [
+      {"cmd": "RESET", "type": "text", "desc": "Factory reset", "syntax": "RESET"}
+    ]
+  }
+}

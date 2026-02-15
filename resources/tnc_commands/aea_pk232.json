@@ -1,0 +1,920 @@
+{
+  "model": "AEA / Timewave PK-232",
+  "firmware_notes": "Compatible con versiones de firmware desde 1986 hasta 7.x. Algunos comandos requieren PK-232MBX o versiones específicas de firmware.",
+  "categories": {
+    "Mode Switching": [
+      {
+        "cmd": "PACKET",
+        "type": "text",
+        "desc": "Switch to Packet mode",
+        "syntax": "PAC",
+        "help": "Switches to AX.25 Packet mode."
+      },
+      {
+        "cmd": "CW",
+        "type": "text",
+        "desc": "Switch to CW mode",
+        "syntax": "CW",
+        "help": "Switches to CW mode. Adjust CWSPEED before use."
+      },
+      {
+        "cmd": "RTTY",
+        "type": "text",
+        "desc": "Switch to RTTY mode",
+        "syntax": "RTTY",
+        "help": "Switches to RTTY mode. Check ABAUD and SHIFT."
+      },
+      {
+        "cmd": "ASCII",
+        "type": "text",
+        "desc": "Switch to ASCII mode",
+        "syntax": "ASCII",
+        "help": "Switches to ASCII mode. Similar to RTTY but for ASCII."
+      },
+      {
+        "cmd": "BAUDOT",
+        "type": "text",
+        "desc": "Switch to Baudot mode",
+        "syntax": "BAUDOT",
+        "help": "Switches to Baudot RTTY mode (5-bit code)."
+      },
+      {
+        "cmd": "AMTOR",
+        "type": "text",
+        "desc": "Switch to AMTOR mode",
+        "syntax": "TOR",
+        "help": "Switches to AMTOR mode."
+      },
+      {
+        "cmd": "FAX",
+        "type": "text",
+        "desc": "Switch to FAX mode",
+        "syntax": "FAX",
+        "help": "Switches to Weather FAX receive mode (requires appropriate firmware)."
+      },
+      {
+        "cmd": "Exit converse",
+        "type": "key",
+        "desc": "Exit converse mode (Ctrl+C)",
+        "key": "ctrl+C",
+        "help": "Sends Ctrl+C to return to command mode."
+      }
+    ],
+    "Connection": [
+      {
+        "cmd": "CONNECT",
+        "type": "text",
+        "desc": "Connect to a station",
+        "syntax": "C {call} [VIA {digi1},{digi2}]",
+        "help": "Initiates an AX.25 connection to the specified station.\n\nExamples:\n  C DG2GSV\n  C DB0UAL VIA DG2GSV\n  C DB0FHN VIA DB0UAL,DB0RBS\n\nThe TNC sends SABM frames and waits for UA. If no response after RETRY attempts, it gives up."
+      },
+      {
+        "cmd": "DISCONNECT",
+        "type": "text",
+        "desc": "Disconnect current session",
+        "syntax": "D",
+        "help": "Sends a DISC frame to end the current AX.25 connection gracefully."
+      },
+      {
+        "cmd": "CONVERSE",
+        "type": "text",
+        "desc": "Enter converse mode",
+        "syntax": "K",
+        "help": "Enters converse mode. Press Ctrl+C to exit. In converse, everything you type is transmitted."
+      },
+      {
+        "cmd": "CONMODE",
+        "type": "text",
+        "desc": "Set mode on connect",
+        "syntax": "CONMODE CONV|TRANS",
+        "help": "Sets the mode to enter when a connection is established.\n\nCONV - enter converse mode\nTRANS - enter transparent mode\n\nDefault: CONV"
+      },
+      {
+        "cmd": "CONPERM",
+        "type": "text",
+        "desc": "Permanent connection",
+        "syntax": "CONPERM ON|OFF",
+        "help": "When ON, prevents automatic disconnect due to timeout or RETRY failures.\n\nDefault: OFF"
+      }
+    ],
+    "Monitoring": [
+      {
+        "cmd": "MONITOR",
+        "type": "text",
+        "desc": "Monitor packet traffic",
+        "syntax": "MON {0-6}",
+        "help": "Controls which packets are displayed:\n\n0 - Monitor OFF\n1 - UI frames only (beacons, unproto)\n2 - I frames (connected data)\n3 - I + UI + SABM + DISC\n4 - All above + UA + DM\n5 - All above + supervisory (RR, RNR, REJ)\n6 - All frames\n\nDefault: 4",
+        "default": "4",
+        "range": "0-6"
+      },
+      {
+        "cmd": "MCOM",
+        "type": "text",
+        "desc": "Monitor while connected",
+        "syntax": "MCOM {0-6}",
+        "help": "Controls monitoring during active connection. Uses same values as MONITOR.\n\nDefault: 0 (off)",
+        "default": "0",
+        "range": "0-6"
+      },
+      {
+        "cmd": "MCON",
+        "type": "text",
+        "desc": "Monitor connected traffic",
+        "syntax": "MCON {0-6}",
+        "help": "Controls monitoring of connected stations' traffic:\n\n0 - OFF\n1 - UI frames\n2 - I + UI frames\n3 - C + D + I + UI\n4 - UA + DM + C + D + I + UI\n5 - All supervisory + above\n6 - All frames\n\nDefault: 0",
+        "default": "0",
+        "range": "0-6"
+      },
+      {
+        "cmd": "MALL",
+        "type": "text",
+        "desc": "Monitor all packets",
+        "syntax": "MALL ON|OFF",
+        "help": "When ON, monitors packets from connected stations as well as unproto.\n\nDefault: ON"
+      },
+      {
+        "cmd": "MHEARD",
+        "type": "text",
+        "desc": "Show heard stations",
+        "syntax": "MH",
+        "help": "Displays a list of stations heard recently with timestamps."
+      },
+      {
+        "cmd": "MHCLEAR",
+        "type": "text",
+        "desc": "Clear heard list",
+        "syntax": "MHC",
+        "help": "Clears the heard stations list."
+      },
+      {
+        "cmd": "MFROM",
+        "type": "text",
+        "desc": "Monitor from specific stations",
+        "syntax": "MFROM {callsign-list}|ONLY|ALL",
+        "help": "Filters which stations to monitor.\n\nMFROM ONLY - show only listed calls\nMFROM ALL - show all calls\nMFROM call1,call2 - add to monitor list\n\nDefault: ALL"
+      },
+      {
+        "cmd": "MTO",
+        "type": "text",
+        "desc": "Monitor to specific stations",
+        "syntax": "MTO {callsign-list}|ONLY|ALL",
+        "help": "Filters packets by destination address. Syntax same as MFROM.\n\nDefault: ALL"
+      },
+      {
+        "cmd": "MSTAMP",
+        "type": "text",
+        "desc": "Monitor timestamp",
+        "syntax": "MSTAMP ON|OFF",
+        "help": "When ON, adds timestamp to each monitored packet.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MPROTO",
+        "type": "text",
+        "desc": "Monitor protocol info",
+        "syntax": "MPROTO ON|OFF",
+        "help": "When ON, displays protocol information in monitored packets.\n\nDefault: OFF"
+      }
+    ],
+    "Station Setup": [
+      {
+        "cmd": "MYCALL",
+        "type": "text",
+        "desc": "Set your callsign",
+        "syntax": "MY {callsign}[-SSID]",
+        "help": "Sets the callsign used for all transmissions.\n\nExamples:\n  MY EA7HQL\n  MY EA7HQL-5\n\nSSID (-0 to -15) can be appended. Default SSID is -0.\nYou MUST set this before connecting.",
+        "default": "PK232"
+      },
+      {
+        "cmd": "MYALIAS",
+        "type": "text",
+        "desc": "Set alternate callsign",
+        "syntax": "MYALIAS {callsign}[-SSID]",
+        "help": "Sets an alternate callsign. TNC responds to both MYCALL and MYALIAS.\n\nDefault: none"
+      },
+      {
+        "cmd": "MYGATE",
+        "type": "text",
+        "desc": "Set gateway callsign",
+        "syntax": "MYGATE {callsign}[-SSID]",
+        "help": "Sets gateway callsign (firmware 7.0+).\n\nDefault: none"
+      },
+      {
+        "cmd": "ECHO",
+        "type": "text",
+        "desc": "Local echo on/off",
+        "syntax": "ECHO ON|OFF",
+        "help": "Controls whether the TNC echoes back characters you type.\n\nECHO ON  – TNC echoes input\nECHO OFF – no echo (use if terminal has local echo)\n\nDefault: ON"
+      },
+      {
+        "cmd": "AUTOLF",
+        "type": "text",
+        "desc": "Auto line feed",
+        "syntax": "AUTOLF ON|OFF",
+        "help": "Adds LF after each CR received.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "FLOW",
+        "type": "text",
+        "desc": "Enable flow control",
+        "syntax": "FLOW ON|OFF",
+        "help": "Master flow control switch.\n\nON - enables flow control (see XFLOW for type)\nOFF - disables all flow control\n\nDefault: ON"
+      },
+      {
+        "cmd": "XFLOW",
+        "type": "text",
+        "desc": "Software flow control type",
+        "syntax": "XFLOW ON|OFF",
+        "help": "ON - XON/XOFF software flow control\nOFF - hardware RTS/CTS flow control\n\nSet OFF for USB serial adapters.\n\nDefault: ON"
+      },
+      {
+        "cmd": "EXPERT",
+        "type": "text",
+        "desc": "Expert mode",
+        "syntax": "EXPERT ON|OFF",
+        "help": "When ON, reduces verbose prompts and messages.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "RESTART",
+        "type": "text",
+        "desc": "Warm restart TNC",
+        "syntax": "RESTART",
+        "help": "Performs a warm restart without clearing parameters.\n\nUse after changing baud rate or certain parameters."
+      }
+    ],
+    "Packet Timing": [
+      {
+        "cmd": "TXDELAY",
+        "type": "text",
+        "desc": "TX keyup delay (10ms units)",
+        "syntax": "TXDELAY {n}",
+        "help": "Delay between keying TX and sending data.\n\nValues: 0-120 (10ms units)\nDefault: 30 (300ms)\n\nGuidelines:\n  Direct VHF: 20-30\n  Via repeater: 40-60\n  HF: 30-50",
+        "default": "30",
+        "range": "0-120"
+      },
+      {
+        "cmd": "FRACK",
+        "type": "text",
+        "desc": "Frame ack timeout (1-15 sec)",
+        "syntax": "FRACK {n}",
+        "help": "Seconds to wait for ACK before retransmitting.\n\nValues: 1-15\nDefault: 3\n\nGuidelines:\n  VHF direct: 3\n  Via digipeater: 5-7\n  HF: 8-15",
+        "default": "3",
+        "range": "1-15"
+      },
+      {
+        "cmd": "RETRY",
+        "type": "text",
+        "desc": "Max retries (0-15)",
+        "syntax": "RETRY {n}",
+        "help": "Max retransmission attempts before disconnect.\n\nValues: 0-15\nDefault: 10",
+        "default": "10",
+        "range": "0-15"
+      },
+      {
+        "cmd": "PERSIST",
+        "type": "text",
+        "desc": "Persistence (0-255)",
+        "syntax": "PERSIST {n}",
+        "help": "CSMA persistence. Higher = more aggressive transmit.\n\nValues: 0-255\nDefault: 63\n\nProbability = (PERSIST + 1) / 256\n  63 = 25% (shared channels)\n  255 = always transmit (point-to-point)",
+        "default": "63",
+        "range": "0-255"
+      },
+      {
+        "cmd": "DWAIT",
+        "type": "text",
+        "desc": "Defer wait time",
+        "syntax": "DWAIT {n}",
+        "help": "Time units to wait after channel clear before transmitting.\n\nValues: 0-255\nDefault: 0\n\nUsed to avoid collisions. Each unit = 10ms.",
+        "default": "0",
+        "range": "0-255"
+      },
+      {
+        "cmd": "SLOTTIME",
+        "type": "text",
+        "desc": "Slot time (10ms units)",
+        "syntax": "SLOTTIME {n}",
+        "help": "Time between PERSIST checks.\n\nValues: 0-255 (10ms units)\nDefault: 10 (100ms)\n\nLower values increase throughput but may cause collisions.",
+        "default": "10",
+        "range": "0-255"
+      },
+      {
+        "cmd": "AXDELAY",
+        "type": "text",
+        "desc": "AX.25 frame delay",
+        "syntax": "AXDELAY {n}",
+        "help": "Delay between AX.25 frames (10ms units).\n\nValues: 0-255\nDefault: 0",
+        "default": "0",
+        "range": "0-255"
+      },
+      {
+        "cmd": "AXHANG",
+        "type": "text",
+        "desc": "AX.25 hang time",
+        "syntax": "AXHANG {n}",
+        "help": "Time to hold PTT after last frame (10ms units).\n\nValues: 0-255\nDefault: 0",
+        "default": "0",
+        "range": "0-255"
+      }
+    ],
+    "Packet Advanced": [
+      {
+        "cmd": "PACLEN",
+        "type": "text",
+        "desc": "Max packet length (0-255)",
+        "syntax": "PACLEN {n}",
+        "help": "Maximum data bytes per AX.25 I-frame.\n\nValues: 0-255 (0 = 256)\nDefault: 128\n\nGuidelines:\n  HF (300 baud): 40-80\n  VHF (1200 baud): 128\n  VHF (9600 baud): 255\n\nSmaller = fewer retransmissions on noisy links.",
+        "default": "128",
+        "range": "0-255"
+      },
+      {
+        "cmd": "MAXFRAME",
+        "type": "text",
+        "desc": "Max outstanding I-frames (1-7)",
+        "syntax": "MAXFRAME {n}",
+        "help": "Max unacknowledged I-frames before waiting for ACK.\n\nValues: 1-7\nDefault: 4\n\nGuidelines:\n  HF: 1-2\n  VHF simplex: 3-4\n  VHF full-duplex: 7",
+        "default": "4",
+        "range": "1-7"
+      },
+      {
+        "cmd": "DIGIPEAT",
+        "type": "text",
+        "desc": "Enable digipeater",
+        "syntax": "DIGIPEAT ON|OFF",
+        "help": "When ON, TNC acts as a digipeater for packets addressed to MYCALL or MYALIAS.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MDIGI",
+        "type": "text",
+        "desc": "Monitor digipeated packets",
+        "syntax": "MDIGI ON|OFF",
+        "help": "When ON, displays packets that have been digipeated.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "PASSALL",
+        "type": "text",
+        "desc": "Pass all packets",
+        "syntax": "PASSALL ON|OFF",
+        "help": "When ON, passes packets even with CRC errors (for monitoring).\n\nDefault: OFF"
+      },
+      {
+        "cmd": "8BITCONV",
+        "type": "text",
+        "desc": "8-bit converse mode",
+        "syntax": "8BITCONV ON|OFF",
+        "help": "When ON, allows 8-bit data in converse mode.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "AX25L2V2",
+        "type": "text",
+        "desc": "AX.25 v2 protocol",
+        "syntax": "AX25L2V2 ON|OFF",
+        "help": "ON - use AX.25 v2.0 protocol\nOFF - use AX.25 v1.0 protocol\n\nDefault: ON"
+      },
+      {
+        "cmd": "CFROM",
+        "type": "text",
+        "desc": "Accept connects from",
+        "syntax": "CFROM ALL|NONE|ONLY {list}|NO {list}",
+        "help": "Controls which stations can connect to you:\n\nALL - accept from anyone\nNONE - reject all\nONLY call1,call2 - accept only listed\nNO call1,call2 - reject listed\n\nDefault: ALL"
+      },
+      {
+        "cmd": "CHECK",
+        "type": "text",
+        "desc": "Packet checksum type",
+        "syntax": "CHECK {n}",
+        "help": "Sets checksum/CRC method:\n\n0 - CRC-CCITT\n1 - CRC-16\n2 - Checksum\n\nDefault: 0",
+        "default": "0"
+      }
+    ],
+    "Beacon & Unproto": [
+      {
+        "cmd": "BEACON",
+        "type": "text",
+        "desc": "Beacon interval",
+        "syntax": "BEACON EVERY|AFTER {n}",
+        "help": "Sets beacon transmission:\n\nEVERY n - send beacon every n×10 seconds\nAFTER n - send once after n×10 sec of inactivity\n\nValues: 0-250 (0 = off)\nDefault: 0\n\nExample: BEACON EVERY 90 (send every 15 minutes)",
+        "default": "EVERY 0"
+      },
+      {
+        "cmd": "BTEXT",
+        "type": "text",
+        "desc": "Beacon text",
+        "syntax": "BTEXT {text}",
+        "help": "Sets the text for beacon packets. Max 120 characters.\n\nExample: BTEXT EA7HQL VHF Packet in Madrid\n\nDefault: empty"
+      },
+      {
+        "cmd": "UNPROTO",
+        "type": "text",
+        "desc": "Unproto destination",
+        "syntax": "UNPROTO {dest} [VIA {digi1},{digi2}]",
+        "help": "Sets destination for beacons and unconnected packets.\n\nExamples:\n  UNPROTO CQ\n  UNPROTO BEACON VIA WIDE2-2\n  UNPROTO APRS VIA RELAY,WIDE\n\nDefault: CQ"
+      },
+      {
+        "cmd": "ID",
+        "type": "text",
+        "desc": "Send ID packet",
+        "syntax": "ID",
+        "help": "Immediately sends an identification packet.\n\nUseful for sending final ID before shutdown."
+      },
+      {
+        "cmd": "CONSTAMP",
+        "type": "text",
+        "desc": "Connection timestamp",
+        "syntax": "CONSTAMP ON|OFF",
+        "help": "When ON, adds timestamp to connect messages.\n\nDefault: OFF"
+      }
+    ],
+    "Connect Messages": [
+      {
+        "cmd": "CTEXT",
+        "type": "text",
+        "desc": "Connect text",
+        "syntax": "CTEXT {text}",
+        "help": "Message sent when someone connects to you. Max 120 characters.\n\nExample: CTEXT Welcome to EA7HQL - I'm QRT, leave msg\n\nDefault: empty"
+      },
+      {
+        "cmd": "CMSG",
+        "type": "text",
+        "desc": "Connect message ON/OFF",
+        "syntax": "CMSG ON|OFF",
+        "help": "When ON, sends CTEXT when stations connect.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "CBELL",
+        "type": "text",
+        "desc": "Connect bell",
+        "syntax": "CBELL ON|OFF",
+        "help": "When ON, sounds terminal bell when connection established.\n\nDefault: OFF"
+      }
+    ],
+    "Date & Time": [
+      {
+        "cmd": "DAYTIME",
+        "type": "text",
+        "desc": "Set date and time",
+        "syntax": "DAYTIME YYMMDDHHMMSS",
+        "help": "Sets the internal clock.\n\nFormat: YY=year, MM=month, DD=day, HH=hour, MM=minute, SS=second\n\nExample: DAYTIME 250214173000 (Feb 14, 2025, 17:30:00)"
+      },
+      {
+        "cmd": "DAYSTAMP",
+        "type": "text",
+        "desc": "Include date in timestamp",
+        "syntax": "DAYSTAMP ON|OFF",
+        "help": "When ON, includes date with time in timestamps.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "CMDTIME",
+        "type": "text",
+        "desc": "Command timestamp",
+        "syntax": "CMDTIME ON|OFF",
+        "help": "When ON, adds timestamp to cmd: prompt.\n\nDefault: OFF"
+      }
+    ],
+    "CW Parameters": [
+      {
+        "cmd": "CWSPEED",
+        "type": "text",
+        "desc": "CW speed in WPM (5-99)",
+        "syntax": "CWSPEED {n}",
+        "help": "Sets the CW sending and receiving speed in words per minute.\n\nValues: 5-99\nDefault: 20\n\nCommon speeds:\n  15 – slow, comfortable for beginners\n  20 – standard QSO speed\n  30+ – contest/advanced",
+        "default": "20",
+        "range": "5-99"
+      },
+      {
+        "cmd": "CWTONE",
+        "type": "text",
+        "desc": "CW sidetone frequency in Hz",
+        "syntax": "CWTONE {n}",
+        "help": "Sets the receive CW filter center frequency.\n\nValues: 200-2000 Hz\nDefault: 800\n\nMatch this to your transceiver's sidetone frequency for best decoding.",
+        "default": "800",
+        "range": "200-2000"
+      },
+      {
+        "cmd": "CWID",
+        "type": "text",
+        "desc": "CW ID at end of transmission",
+        "syntax": "CWID ON|OFF",
+        "help": "When ON, the TNC sends your callsign in CW at the end of each transmission.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "WIDESHFT",
+        "type": "text",
+        "desc": "CW bandwidth/weight",
+        "syntax": "WIDESHFT ON|OFF",
+        "help": "Toggles between wide (1000Hz) and narrow (200Hz) shift for CW.\n\nDefault: OFF (narrow)"
+      }
+    ],
+    "AMTOR Parameters": [
+      {
+        "cmd": "AMTOR CONNECT",
+        "type": "text",
+        "desc": "Connect in ARQ mode",
+        "syntax": "AC {selcall}",
+        "help": "Initiates an AMTOR ARQ (Automatic Repeat Request) connection.\n\nThe selcall is a 4-character code derived from the target station's callsign.\n\nExample:\n  AC DGKV"
+      },
+      {
+        "cmd": "MYSELCALL",
+        "type": "text",
+        "desc": "Set your AMTOR selcall (4 chars)",
+        "syntax": "MYSELCALL {selcall}",
+        "help": "Sets your 4-character AMTOR selective call.\n\nThe selcall is derived from your callsign. Check your TNC manual or use online calculators to determine it."
+      },
+      {
+        "cmd": "AMTOR FEC",
+        "type": "text",
+        "desc": "Send FEC broadcast",
+        "syntax": "AF",
+        "help": "Starts an AMTOR FEC (Forward Error Correction) broadcast.\n\nFEC is a one-way mode – no acknowledgement from the receiving station. Good for CQ calls and broadcasts."
+      },
+      {
+        "cmd": "AMTOR LISTEN",
+        "type": "text",
+        "desc": "Listen for AMTOR calls",
+        "syntax": "AL",
+        "help": "Places the TNC in AMTOR standby, listening for incoming ARQ calls addressed to your selcall."
+      },
+      {
+        "cmd": "ARQTMO",
+        "type": "text",
+        "desc": "ARQ timeout",
+        "syntax": "ARQTMO {n}",
+        "help": "Sets ARQ mode timeout in seconds.\n\nValues: 0-255\nDefault: 120",
+        "default": "120",
+        "range": "0-255"
+      },
+      {
+        "cmd": "ADELAY",
+        "type": "text",
+        "desc": "AMTOR TX delay",
+        "syntax": "ADELAY {n}",
+        "help": "Transmit delay for AMTOR (10ms units).\n\nValues: 0-255\nDefault: 30",
+        "default": "30",
+        "range": "0-255"
+      }
+    ],
+    "RTTY/ASCII Parameters": [
+      {
+        "cmd": "ABAUD",
+        "type": "text",
+        "desc": "RTTY/ASCII baud rate",
+        "syntax": "ABAUD {n}",
+        "help": "Sets baud rate for Baudot/ASCII RTTY modes.\n\nCommon values:\n45 - standard Baudot\n50 - 50 baud\n75 - 75 baud\n110 - standard ASCII\n300 - fast ASCII\n\nDefault: 45",
+        "default": "45"
+      },
+      {
+        "cmd": "SHIFT",
+        "type": "text",
+        "desc": "RTTY frequency shift (Hz)",
+        "syntax": "SHIFT {n}",
+        "help": "Sets RTTY mark-space shift frequency.\n\nCommon values:\n170 - standard amateur RTTY\n200 - 200 Hz\n425 - 425 Hz\n850 - wide shift\n\nDefault: 170",
+        "default": "170"
+      },
+      {
+        "cmd": "INVERT",
+        "type": "text",
+        "desc": "Invert RTTY mark/space",
+        "syntax": "INVERT ON|OFF",
+        "help": "Inverts the sense of mark and space tones.\n\nTry toggling if you receive garbled text. Some stations use inverted polarity.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "AWLEN",
+        "type": "text",
+        "desc": "ASCII word length (bits)",
+        "syntax": "AWLEN {5|6|7|8}",
+        "help": "Sets data bits for ASCII RTTY mode.\n\n5 - Baudot\n7 - standard ASCII\n8 - 8-bit ASCII/binary\n\nDefault: 5",
+        "default": "5"
+      },
+      {
+        "cmd": "WORDOUT",
+        "type": "text",
+        "desc": "Word output mode",
+        "syntax": "WORDOUT ON|OFF",
+        "help": "Controls RTTY word output formatting.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "BITINV",
+        "type": "text",
+        "desc": "Bit inversion",
+        "syntax": "BITINV ON|OFF",
+        "help": "Inverts all data bits.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "TXREV",
+        "type": "text",
+        "desc": "Transmit reverse",
+        "syntax": "TXREV ON|OFF",
+        "help": "Reverses transmit data polarity in Baudot/ASCII/AMTOR.\n\nDefault: OFF"
+      }
+    ],
+    "Radio Interface": [
+      {
+        "cmd": "VHF",
+        "type": "text",
+        "desc": "Select VHF port",
+        "syntax": "VHF ON|OFF",
+        "help": "ON - use VHF port (J6, typically 1200 baud)\nOFF - use HF port (J4, typically 300 baud)\n\nDefault: ON"
+      },
+      {
+        "cmd": "HBAUD",
+        "type": "text",
+        "desc": "HF/VHF baud rate",
+        "syntax": "HBAUD {n}",
+        "help": "Sets the packet modem baud rate.\n\nCommon values:\n300 - HF packet\n1200 - VHF packet (most common)\n9600 - high-speed VHF (requires G3RUH modem)\n\nDefault: 1200",
+        "default": "1200"
+      },
+      {
+        "cmd": "CALIBRATE",
+        "type": "text",
+        "desc": "Enter calibration mode",
+        "syntax": "CAL",
+        "help": "Enters calibration mode for adjusting transmitter audio levels.\n\nThe TNC transmits alternating tones. Press any key to exit.\n\nUse WIDESHFT to toggle between narrow (200Hz) and wide (1000Hz) shift."
+      }
+    ],
+    "Mailbox (MBX only)": [
+      {
+        "cmd": "MYMAIL",
+        "type": "text",
+        "desc": "Mailbox callsign",
+        "syntax": "MYMAIL {callsign}[-SSID]",
+        "help": "Sets the callsign for mailbox operation (PK-232MBX only).\n\nExample: MYMAIL EA7HQL-1\n\nDefault: none"
+      },
+      {
+        "cmd": "MAILDROP",
+        "type": "text",
+        "desc": "Enable mailbox",
+        "syntax": "MAILDROP ON|OFF",
+        "help": "Enables/disables mailbox functionality (PK-232MBX only).\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MDCHECK",
+        "type": "text",
+        "desc": "Check for mail",
+        "syntax": "MDCHECK",
+        "help": "Checks if you have new mail in the mailbox (PK-232MBX only)."
+      },
+      {
+        "cmd": "MTEXT",
+        "type": "text",
+        "desc": "Mailbox greeting",
+        "syntax": "MTEXT {text}",
+        "help": "Sets the mailbox greeting message (PK-232MBX only). Max 120 chars.\n\nDefault: empty"
+      },
+      {
+        "cmd": "MDMON",
+        "type": "text",
+        "desc": "Monitor mailbox",
+        "syntax": "MDMON ON|OFF",
+        "help": "Enables monitoring of mailbox activity (PK-232MBX only).\n\nDefault: OFF"
+      }
+    ],
+    "Special Characters": [
+      {
+        "cmd": "CANLINE",
+        "type": "text",
+        "desc": "Cancel line character",
+        "syntax": "CANLINE ${hex}",
+        "help": "Sets the character that cancels current input line.\n\nDefault: $18 (Ctrl+X)",
+        "default": "$18"
+      },
+      {
+        "cmd": "CANPAC",
+        "type": "text",
+        "desc": "Cancel packet character",
+        "syntax": "CANPAC ${hex}",
+        "help": "Sets the character that cancels current packet.\n\nDefault: $19 (Ctrl+Y)",
+        "default": "$19"
+      },
+      {
+        "cmd": "DELETE",
+        "type": "text",
+        "desc": "Delete character",
+        "syntax": "DELETE ${hex}",
+        "help": "Sets the character for destructive backspace.\n\nDefault: $08 (Backspace)",
+        "default": "$08"
+      },
+      {
+        "cmd": "REDISPLA",
+        "type": "text",
+        "desc": "Redisplay line character",
+        "syntax": "REDISPLA ${hex}",
+        "help": "Sets the character that redisplays current input line.\n\nDefault: $12 (Ctrl+R)",
+        "default": "$12"
+      },
+      {
+        "cmd": "SENDPAC",
+        "type": "text",
+        "desc": "Send packet character",
+        "syntax": "SENDPAC ${hex}",
+        "help": "Sets the character that manually sends a packet.\n\nDefault: $0D (Enter)",
+        "default": "$0D"
+      },
+      {
+        "cmd": "CHSWITCH",
+        "type": "text",
+        "desc": "Channel switch character",
+        "syntax": "CHSWITCH ${hex}",
+        "help": "Character to switch between packet channels.\n\nDefault: $7C (|)",
+        "default": "$7C"
+      }
+    ],
+    "Flow Control": [
+      {
+        "cmd": "START",
+        "type": "text",
+        "desc": "START character (XON)",
+        "syntax": "START ${hex}",
+        "help": "Sets the XON character for software flow control.\n\nDefault: $11 (Ctrl+Q)\n\nSet to $00 to disable.",
+        "default": "$11"
+      },
+      {
+        "cmd": "STOP",
+        "type": "text",
+        "desc": "STOP character (XOFF)",
+        "syntax": "STOP ${hex}",
+        "help": "Sets the XOFF character for software flow control.\n\nDefault: $13 (Ctrl+S)\n\nSet to $00 to disable.",
+        "default": "$13"
+      },
+      {
+        "cmd": "XON",
+        "type": "text",
+        "desc": "XON sent to computer",
+        "syntax": "XON ${hex}",
+        "help": "Character TNC sends to computer to resume transmission.\n\nDefault: $11 (Ctrl+Q)",
+        "default": "$11"
+      },
+      {
+        "cmd": "XOFF",
+        "type": "text",
+        "desc": "XOFF sent to computer",
+        "syntax": "XOFF ${hex}",
+        "help": "Character TNC sends to computer to pause transmission.\n\nDefault: $13 (Ctrl+S)",
+        "default": "$13"
+      },
+      {
+        "cmd": "TRFLOW",
+        "type": "text",
+        "desc": "Transparent mode flow",
+        "syntax": "TRFLOW ON|OFF",
+        "help": "Enables software flow control in transparent mode.\n\nDefault: OFF"
+      }
+    ],
+    "Display & Headers": [
+      {
+        "cmd": "HEADERLN",
+        "type": "text",
+        "desc": "Header line format",
+        "syntax": "HEADERLN {n}",
+        "help": "Sets packet header display format:\n\n0 - no headers\n1 - FROM>TO\n2 - FROM>TO,VIA\n3 - full AX.25 header\n\nDefault: 1",
+        "default": "1",
+        "range": "0-3"
+      },
+      {
+        "cmd": "SCREENLN",
+        "type": "text",
+        "desc": "Screen length",
+        "syntax": "SCREENLN {n}",
+        "help": "Sets number of lines per screen for paging.\n\nValues: 0-255 (0 = no paging)\nDefault: 0",
+        "default": "0",
+        "range": "0-255"
+      },
+      {
+        "cmd": "CRADD",
+        "type": "text",
+        "desc": "Add CR to received data",
+        "syntax": "CRADD ON|OFF",
+        "help": "When ON, adds CR to received packet data.\n\nDefault: OFF"
+      }
+    ],
+    "KISS Mode": [
+      {
+        "cmd": "KISS",
+        "type": "text",
+        "desc": "Enable KISS mode",
+        "syntax": "KISS ON|OFF",
+        "help": "Enables KISS protocol mode for host programs.\n\nKISS mode disables command mode and passes raw frames.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "HOST",
+        "type": "text",
+        "desc": "Enable HOST mode",
+        "syntax": "HOST ON|OFF",
+        "help": "Enables binary HOST mode for computer control.\n\nHOST mode uses 2-letter mnemonics for all commands.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "RAWHDLC",
+        "type": "text",
+        "desc": "Raw HDLC mode",
+        "syntax": "RAWHDLC ON|OFF",
+        "help": "When ON, disables AX.25 protocol layer (for KISS).\n\nDefault: OFF"
+      },
+      {
+        "cmd": "HPOLL",
+        "type": "text",
+        "desc": "Host polling",
+        "syntax": "HPOLL ON|OFF",
+        "help": "Enables host mode polling.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "PPERSIST",
+        "type": "text",
+        "desc": "P-persistence mode",
+        "syntax": "PPERSIST ON|OFF",
+        "help": "When ON, uses PERSIST algorithm. When OFF, uses DWAIT.\n\nDefault: ON"
+      }
+    ],
+    "Serial Port": [
+      {
+        "cmd": "PARITY",
+        "type": "text",
+        "desc": "Serial parity",
+        "syntax": "PARITY {0|1|2}",
+        "help": "Sets serial port parity:\n\n0 - no parity\n1 - odd parity\n2 - even parity\n\nDefault: 0",
+        "default": "0"
+      },
+      {
+        "cmd": "TXFLOW",
+        "type": "text",
+        "desc": "TX flow control",
+        "syntax": "TXFLOW ON|OFF",
+        "help": "Enables transmit flow control.\n\nDefault: ON"
+      }
+    ],
+    "Information": [
+      {
+        "cmd": "DISPLAY",
+        "type": "text",
+        "desc": "Display settings",
+        "syntax": "DISP [option]",
+        "help": "Shows TNC parameter values.\n\nOptions:\n  (none) or Z - all settings\n  A - ASYNC parameters\n  C - Character parameters\n  F - FAX parameters\n  I - ID parameters\n  L - Link parameters\n  M - Monitor parameters\n  R - RTTY parameters\n  T - Timing parameters\n\nSingle parameter: DISP PACLEN"
+      },
+      {
+        "cmd": "HELP",
+        "type": "text",
+        "desc": "Show help",
+        "syntax": "HELP",
+        "help": "Displays brief help information."
+      },
+      {
+        "cmd": "CSTATUS",
+        "type": "text",
+        "desc": "Connection status",
+        "syntax": "CSTATUS",
+        "help": "Displays current connection status and channel information."
+      },
+      {
+        "cmd": "WHYNOT",
+        "type": "text",
+        "desc": "Why not connected",
+        "syntax": "WHYNOT",
+        "help": "Explains why last connection attempt failed."
+      }
+    ],
+    "Reset": [
+      {
+        "cmd": "RESET",
+        "type": "text",
+        "desc": "Reset to factory defaults",
+        "syntax": "RESET",
+        "help": "Resets ALL parameters to factory defaults.\n\nWARNING: Erases callsign and all settings.\n\nUse RESTART for warm reboot without clearing settings."
+      }
+    ],
+    "Special Keys": [
+      {
+        "cmd": "Ctrl+C",
+        "type": "key",
+        "desc": "Exit converse / command mode",
+        "key": "ctrl+C",
+        "help": "Sends Ctrl+C (0x03) to return to the cmd: prompt from converse or data mode."
+      },
+      {
+        "cmd": "ESC",
+        "type": "key",
+        "desc": "Send Escape character",
+        "key": "escape",
+        "help": "Sends ESC (0x1B). Some TNCs use this for special functions."
+      },
+      {
+        "cmd": "Break",
+        "type": "key",
+        "desc": "Send serial BREAK signal",
+        "key": "break",
+        "help": "Sends a serial BREAK signal. Used for autobaud detection or hardware reset on some TNCs."
+      }
+    ]
+  },
+  "connectors": {
+    "Computer Port": "DB-25 RS-232 DCE. Pin 2: RxD (in from computer), Pin 3: TxD (out to computer), Pin 4: RTS (in), Pin 5: CTS (out), Pin 7: GND, Pin 8: DCD (out), Pin 20: DTR (in). IMPORTANT: Do NOT connect pins 9-25!",
+    "Radio 1 (J4, HF)": "5-pin Molex. Pin 1: RX audio in, Pin 2: TX audio out (AFSK), Pin 3: Squelch in, Pin 4: GND, Pin 5: PTT out (active low, grounds when transmitting).",
+    "Radio 2 (J6, VHF)": "5-pin Molex. Same pinout as Radio 1 (J4).",
+    "CW Key Output": "J9 = positive keying (closes to +V), J10 = negative keying (closes to GND).",
+    "FSK Output": "8-pin IDC TTL header. Pin 3: GND, Pin 8: FSK (mark/space levels).",
+    "Speaker": "3.5mm rear panel jack (monitor output only, NOT an input).",
+    "Power": "2.1mm coaxial, center positive, +12V DC nominal (11-16V acceptable), 500mA typical consumption.",
+    "Battery Backup": "Internal: 3× AA batteries or lithium cell for parameter memory backup. Remove jumper if batteries not installed."
+  },
+  "notes": {
+    "firmware_versions": "Original PK-232 (1986), PK-232MBX (1989, integrated mailbox), firmware updates through 7.x added Pactor, Gateway modes, GPS support.",
+    "rs232_wiring": "PK-232 is DCE (Data Communications Equipment). Most computers are DTE. Use straight-through cable with pins 2↔3 swapped: Computer pin 2→PK-232 pin 3, Computer pin 3→PK-232 pin 2.",
+    "baud_rates": "Terminal baud: usually 9600 or 19200. Set same on computer and TNC. Use RESTART after changing.",
+    "kiss_setup": "To enter KISS mode: AWLEN 8, PARITY 0, RESTART, PACKET, START 0, STOP 0, XON 0, XOFF 0, XFLOW OFF, CONMODE TRANS, HPOLL OFF, KISS ON, RAWHDLC ON, PPERSIST ON, HOST ON"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "model": "SCS PTC-II / IIe / IIpro",
+  "categories": {
+    "Mode Switching": [
+      {"cmd": "PACKET", "type": "text", "desc": "Switch to Packet mode", "syntax": "PAC"},
+      {"cmd": "PACTOR", "type": "text", "desc": "Switch to PACTOR mode", "syntax": "PT"},
+      {"cmd": "RTTY", "type": "text", "desc": "Switch to RTTY mode", "syntax": "RTTY"},
+      {"cmd": "CW", "type": "text", "desc": "Switch to CW mode", "syntax": "CW"},
+      {"cmd": "AMTOR", "type": "text", "desc": "Switch to AMTOR mode", "syntax": "TOR"},
+      {"cmd": "PSK31", "type": "text", "desc": "Switch to PSK31 mode", "syntax": "PSK"},
+      {"cmd": "Exit to command", "type": "key", "desc": "Return to SCS command prompt (Escape)", "key": "escape"}
+    ],
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call}"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect", "syntax": "D"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse mode", "syntax": "K"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Monitor level (0-3)", "syntax": "MON {n}"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations", "syntax": "MH"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo (0=off, 1=on)", "syntax": "ECHO {n}"},
+      {"cmd": "CBELL", "type": "text", "desc": "Connect bell on/off", "syntax": "CBELL {n}"},
+      {"cmd": "LICENSE", "type": "text", "desc": "Show license callsign", "syntax": "LIC"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet length", "syntax": "PACLEN {n}"},
+      {"cmd": "MAXFRAME", "type": "text", "desc": "Max outstanding frames", "syntax": "MAXFR {n}"},
+      {"cmd": "FRACK", "type": "text", "desc": "Frame ack timeout", "syntax": "FRACK {n}"},
+      {"cmd": "RETRY", "type": "text", "desc": "Max retries", "syntax": "RETRY {n}"},
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay (ms)", "syntax": "TXD {n}"}
+    ],
+    "PACTOR Parameters": [
+      {"cmd": "PACTOR CONNECT", "type": "text", "desc": "Connect in PACTOR", "syntax": "C {call}"},
+      {"cmd": "PACTOR SPEED", "type": "text", "desc": "Force PACTOR speed level", "syntax": "PTSPEED {n}"},
+      {"cmd": "PACTOR LISTEN", "type": "text", "desc": "Listen for PACTOR calls", "syntax": "LISTEN 1"},
+      {"cmd": "PACTOR CWID", "type": "text", "desc": "CW ID interval", "syntax": "CWID {n}"},
+      {"cmd": "ARX", "type": "text", "desc": "Auto-RX frequency tracking", "syntax": "ARX {n}"},
+      {"cmd": "CHOBELL", "type": "text", "desc": "Changeover bell", "syntax": "CHOBELL {n}"}
+    ],
+    "CW Parameters": [
+      {"cmd": "CWSPEED", "type": "text", "desc": "CW speed in WPM", "syntax": "CWSPEED {n}"},
+      {"cmd": "CWTONE", "type": "text", "desc": "CW sidetone frequency", "syntax": "CWTONE {n}"}
+    ],
+    "RTTY Parameters": [
+      {"cmd": "RTTYBAUD", "type": "text", "desc": "RTTY baud rate", "syntax": "RTTYBAUD {n}"},
+      {"cmd": "RTTYSHIFT", "type": "text", "desc": "RTTY shift", "syntax": "RTTYSHIFT {n}"},
+      {"cmd": "RTTYINVERT", "type": "text", "desc": "Invert mark/space", "syntax": "RTTYINV {n}"}
+    ],
+    "PSK31 Parameters": [
+      {"cmd": "PSK SPEED", "type": "text", "desc": "PSK31 speed", "syntax": "PSKSPEED {n}"},
+      {"cmd": "PSK AFC", "type": "text", "desc": "PSK AFC on/off", "syntax": "PSKAFC {n}"}
+    ],
+    "Special Keys": [
+      {"cmd": "Escape", "type": "key", "desc": "Return to SCS command prompt", "key": "escape"},
+      {"cmd": "Ctrl+C", "type": "key", "desc": "Send Ctrl+C", "key": "ctrl+C"},
+      {"cmd": "Break", "type": "key", "desc": "Send serial BREAK", "key": "break"}
+    ],
+    "Information": [
+      {"cmd": "VERSION", "type": "text", "desc": "Show firmware version", "syntax": "VER"},
+      {"cmd": "STATUS", "type": "text", "desc": "Show current status", "syntax": "ST"}
+    ],
+    "Reset": [
+      {"cmd": "RESTART", "type": "text", "desc": "Restart controller", "syntax": "RESTART"},
+      {"cmd": "SYSRESET", "type": "text", "desc": "Full system reset", "syntax": "SYSRESET"}
+    ]
+  }
+}

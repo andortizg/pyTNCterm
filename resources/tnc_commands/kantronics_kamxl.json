@@ -1,0 +1,79 @@
+{
+  "model": "Kantronics KAM-XL",
+  "extends": "Kantronics KAM / KAM+",
+  "categories": {
+    "Mode Switching": [
+      {"cmd": "PACKET", "type": "text", "desc": "Switch to Packet mode", "syntax": "PACKET"},
+      {"cmd": "CW", "type": "text", "desc": "Switch to CW mode", "syntax": "CW"},
+      {"cmd": "RTTY", "type": "text", "desc": "Switch to RTTY mode", "syntax": "RTTY"},
+      {"cmd": "AMTOR", "type": "text", "desc": "Switch to AMTOR mode", "syntax": "AMTOR"},
+      {"cmd": "PACTOR", "type": "text", "desc": "Switch to PACTOR mode", "syntax": "PACTOR"},
+      {"cmd": "Exit to command", "type": "sequence", "desc": "Exit current mode to cmd: prompt",
+       "steps": [
+         {"action": "ctrl", "key": "C", "desc": "Send Ctrl+C"},
+         {"action": "wait", "ms": 300},
+         {"action": "text", "value": "X\r", "desc": "Send X + Enter to confirm"}
+       ]},
+      {"cmd": "Exit converse", "type": "key", "desc": "Exit converse mode (Ctrl+C)", "key": "ctrl+C"}
+    ],
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call} [VIA {digi1},{digi2}]"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect", "syntax": "D"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse mode", "syntax": "CONV"},
+      {"cmd": "TRANSPARENT", "type": "text", "desc": "Enter transparent mode", "syntax": "TRANS"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Monitor level (0=off, 1-6)", "syntax": "MON {n}"},
+      {"cmd": "MCOM", "type": "text", "desc": "Monitor while connected", "syntax": "MCOM ON|OFF"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations list", "syntax": "MH"},
+      {"cmd": "MHCLEAR", "type": "text", "desc": "Clear heard list", "syntax": "MHC"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo on/off", "syntax": "ECHO ON|OFF"},
+      {"cmd": "INTERFACE", "type": "text", "desc": "Set terminal interface", "syntax": "INT TERMINAL|KISS|HOST"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet length", "syntax": "PACLEN {n}"},
+      {"cmd": "MAXFRAME", "type": "text", "desc": "Max outstanding I-frames (1-7)", "syntax": "MAXFRAME {n}"},
+      {"cmd": "FRACK", "type": "text", "desc": "Frame ack timeout", "syntax": "FRACK {n}"},
+      {"cmd": "RETRY", "type": "text", "desc": "Max retries", "syntax": "RETRY {n}"},
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay", "syntax": "TXDELAY {n}"}
+    ],
+    "PACTOR Parameters": [
+      {"cmd": "PACTOR CONNECT", "type": "text", "desc": "Connect in PACTOR mode", "syntax": "PC {call}"},
+      {"cmd": "PACTOR LISTEN", "type": "text", "desc": "Listen for PACTOR calls", "syntax": "PL"},
+      {"cmd": "PACTOR FEC", "type": "text", "desc": "Send PACTOR FEC broadcast", "syntax": "PF"},
+      {"cmd": "PACTOR SPEED", "type": "text", "desc": "PACTOR speed (100/200)", "syntax": "PACTORSPEED {n}"},
+      {"cmd": "PACTOR CALLS", "type": "text", "desc": "Max PACTOR connect attempts", "syntax": "PTCALLS {n}"},
+      {"cmd": "PACTOR CWID", "type": "text", "desc": "CW ID after PACTOR session", "syntax": "PTCWID ON|OFF"}
+    ],
+    "CW Parameters": [
+      {"cmd": "CWSPEED", "type": "text", "desc": "CW speed in WPM (5-99)", "syntax": "CWSPEED {n}"},
+      {"cmd": "CWTONE", "type": "text", "desc": "CW sidetone freq in Hz", "syntax": "CWTONE {n}"},
+      {"cmd": "CWBAND", "type": "text", "desc": "CW receive bandwidth", "syntax": "CWBAND NARROW|MEDIUM|WIDE"}
+    ],
+    "RTTY Parameters": [
+      {"cmd": "RTTYBAUD", "type": "text", "desc": "RTTY baud rate", "syntax": "RTTYBAUD {n}"},
+      {"cmd": "RTTYSHIFT", "type": "text", "desc": "RTTY frequency shift", "syntax": "RTTYSHIFT {n}"},
+      {"cmd": "RTTYINVERT", "type": "text", "desc": "Invert mark/space", "syntax": "RTTYINVERT ON|OFF"}
+    ],
+    "AMTOR Parameters": [
+      {"cmd": "AMTOR CONNECT", "type": "text", "desc": "Connect in ARQ mode", "syntax": "AC {selcall}"},
+      {"cmd": "AMTOR SELCALL", "type": "text", "desc": "Set AMTOR selcall", "syntax": "MYSELCALL {selcall}"},
+      {"cmd": "AMTOR FEC", "type": "text", "desc": "Send FEC broadcast", "syntax": "AF"}
+    ],
+    "Special Keys": [
+      {"cmd": "Ctrl+C", "type": "key", "desc": "Exit converse / command mode", "key": "ctrl+C"},
+      {"cmd": "ESC", "type": "key", "desc": "Send Escape character", "key": "escape"},
+      {"cmd": "Break", "type": "key", "desc": "Send serial BREAK signal", "key": "break"}
+    ],
+    "Information": [
+      {"cmd": "DISPLAY", "type": "text", "desc": "Display all settings", "syntax": "DISP"},
+      {"cmd": "CALIBRATE", "type": "text", "desc": "Enter calibration mode", "syntax": "CAL"}
+    ],
+    "Reset": [
+      {"cmd": "RESET", "type": "text", "desc": "Reset to factory defaults", "syntax": "RESET"}
+    ]
+  }
+}

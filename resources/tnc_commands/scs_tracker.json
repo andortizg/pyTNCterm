@@ -1,0 +1,39 @@
+{
+  "model": "SCS Tracker / DSP TNC",
+  "categories": {
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call}"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect", "syntax": "D"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse mode", "syntax": "K"}
+    ],
+    "Mode Control": [
+      {"cmd": "Command mode", "type": "key", "desc": "Return to command prompt (Escape)", "key": "escape"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Monitor level", "syntax": "MON {n}"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations", "syntax": "MH"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo", "syntax": "ECHO {n}"},
+      {"cmd": "UNPROTO", "type": "text", "desc": "Unproto path", "syntax": "UNPROTO {path}"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay (ms)", "syntax": "TXD {n}"},
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet length", "syntax": "PACLEN {n}"}
+    ],
+    "APRS": [
+      {"cmd": "BEACON", "type": "text", "desc": "Set beacon text", "syntax": "BTEXT {text}"},
+      {"cmd": "BEACON EVERY", "type": "text", "desc": "Beacon interval", "syntax": "BEACON {n}"},
+      {"cmd": "GPSTEXT", "type": "text", "desc": "GPS beacon format", "syntax": "GPSTEXT {fmt}"}
+    ],
+    "Special Keys": [
+      {"cmd": "Escape", "type": "key", "desc": "Command prompt", "key": "escape"},
+      {"cmd": "Break", "type": "key", "desc": "Send BREAK", "key": "break"}
+    ],
+    "Information": [
+      {"cmd": "VERSION", "type": "text", "desc": "Firmware version", "syntax": "VER"},
+      {"cmd": "STATUS", "type": "text", "desc": "Current status", "syntax": "ST"}
+    ]
+  }
+}

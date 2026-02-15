@@ -1,0 +1,979 @@
+{
+  "model": "Kantronics KAM / KAM Plus",
+  "firmware_notes": "Compatible con KAM original (1986), KAM Plus (1994-2003), versiones de firmware 2.x a 8.x. Algunos comandos requieren versiones específicas o módulos opcionales (PACTOR, G-TOR, GPS).",
+  "categories": {
+    "Mode Switching": [
+      {
+        "cmd": "PACKET",
+        "type": "text",
+        "desc": "Switch to Packet mode",
+        "syntax": "PACKET",
+        "help": "Switches the TNC to AX.25 Packet mode.\n\nAll packet parameters (PACLEN, MAXFRAME, etc.) become active."
+      },
+      {
+        "cmd": "CW",
+        "type": "text",
+        "desc": "Switch to CW mode",
+        "syntax": "CW [{speed}]",
+        "help": "Switches to CW (Morse code) mode.\n\nOptional speed parameter sets WPM (5-99).\nExamples:\n  CW (current speed)\n  CW 20 (20 WPM)\n\nThe TNC will decode received CW and encode typed text as CW. Adjust CWSPEED and CWTONE for best results."
+      },
+      {
+        "cmd": "RTTY",
+        "type": "text",
+        "desc": "Switch to RTTY mode",
+        "syntax": "RTTY [{baud}]",
+        "help": "Switches to RTTY (Radio Teletype) Baudot mode.\n\nOptional baud parameter (5-300 on HF).\nExample: RTTY 45\n\nCheck RBAUD, SHIFT, and INVERT settings before use."
+      },
+      {
+        "cmd": "ASCII",
+        "type": "text",
+        "desc": "Switch to ASCII mode",
+        "syntax": "ASCII [{baud}]",
+        "help": "Switches to ASCII RTTY mode.\n\nOptional baud parameter.\nCommon: 110, 300.\n\nCheck ASCBAUD settings."
+      },
+      {
+        "cmd": "AMTOR",
+        "type": "text",
+        "desc": "Switch to AMTOR mode",
+        "syntax": "AMTOR [{selcall}]",
+        "help": "Switches to AMTOR mode.\n\nNo parameter: standby mode\nWith selcall (4 chars): initiate ARQ call\n\nExamples:\n  AMTOR (standby)\n  AMTOR DGKV (call DGKV)\n\nUse Ctrl+C T for FEC mode."
+      },
+      {
+        "cmd": "PACTOR",
+        "type": "text",
+        "desc": "Switch to PACTOR mode",
+        "syntax": "PACTOR [{callsign}]",
+        "help": "Switches to PACTOR mode (requires PACTOR option).\n\nNo parameter: standby\nWith callsign: initiate link\n\nExample: PACTOR EA7HQL"
+      },
+      {
+        "cmd": "GTOR",
+        "type": "text",
+        "desc": "Switch to G-TOR mode",
+        "syntax": "GTOR [{callsign}]",
+        "help": "Switches to G-TOR mode (requires G-TOR firmware).\n\nNo parameter: standby\nWith callsign: initiate link\n\nG-TOR is faster than AMTOR, slower than PACTOR."
+      },
+      {
+        "cmd": "NAVTEX",
+        "type": "text",
+        "desc": "Switch to NAVTEX mode",
+        "syntax": "NAVTEX",
+        "help": "Switches to NAVTEX marine broadcast reception mode.\n\nReceives marine weather and navigation warnings."
+      },
+      {
+        "cmd": "WEFAX",
+        "type": "text",
+        "desc": "Switch to WEFAX mode",
+        "syntax": "WEFAX",
+        "help": "Switches to Weather FAX reception mode.\n\nReceives weather maps and charts."
+      },
+      {
+        "cmd": "Exit to command",
+        "type": "sequence",
+        "desc": "Exit current mode to cmd: prompt",
+        "steps": [
+          {
+            "action": "ctrl",
+            "key": "C",
+            "desc": "Send Ctrl+C to exit converse"
+          },
+          {
+            "action": "wait",
+            "ms": 300
+          },
+          {
+            "action": "text",
+            "value": "X\r",
+            "desc": "Send X + Enter to confirm"
+          }
+        ],
+        "help": "Exits the current operating mode (CW/RTTY/AMTOR converse) back to the cmd: prompt.\n\nSequence: Ctrl+C, wait 300ms, then X + Enter."
+      },
+      {
+        "cmd": "Exit converse",
+        "type": "key",
+        "desc": "Exit converse mode (Ctrl+C)",
+        "key": "ctrl+C",
+        "help": "Sends Ctrl+C to exit converse mode. In some modes you may also need to type X to confirm."
+      }
+    ],
+    "Connection": [
+      {
+        "cmd": "CONNECT",
+        "type": "text",
+        "desc": "Connect to a station",
+        "syntax": "C {call} [VIA {digi1},{digi2}]",
+        "help": "Initiates an AX.25 connection to the specified station.\n\nExamples:\n  C DG2GSV\n  C DB0UAL VIA DG2GSV\n  C DB0FHN VIA DB0UAL,DB0RBS\n\nThe TNC sends SABM frames and waits for UA. If no response after RETRY attempts, it gives up."
+      },
+      {
+        "cmd": "DISCONNECT",
+        "type": "text",
+        "desc": "Disconnect current session",
+        "syntax": "D",
+        "help": "Sends a DISC frame to end the current AX.25 connection gracefully."
+      },
+      {
+        "cmd": "CONVERSE",
+        "type": "text",
+        "desc": "Enter converse mode",
+        "syntax": "CONV",
+        "help": "Enters converse mode. Everything you type is packetized and transmitted.\nPress Ctrl+C to return to command mode.\n\nShorthand: K"
+      },
+      {
+        "cmd": "TRANSPARENT",
+        "type": "text",
+        "desc": "Enter transparent mode",
+        "syntax": "TRANS",
+        "help": "Enters transparent mode. Data is sent exactly as typed, with no special character interpretation.\n\nTo exit transparent mode, send the escape sequence (usually Ctrl+C Ctrl+C Ctrl+C with pauses)."
+      },
+      {
+        "cmd": "CONOK",
+        "type": "text",
+        "desc": "Connection acknowledgment",
+        "syntax": "CONOK ON|OFF",
+        "help": "When ON, displays '*** CONNECTED to {call}' message.\n\nDefault: ON"
+      },
+      {
+        "cmd": "CONMODE",
+        "type": "text",
+        "desc": "Mode after connect",
+        "syntax": "CONMODE CONV|TRANS",
+        "help": "Sets mode to enter when connection established.\n\nCONV - converse mode\nTRANS - transparent mode\n\nDefault: CONV"
+      }
+    ],
+    "Monitoring": [
+      {
+        "cmd": "MONITOR",
+        "type": "text",
+        "desc": "Monitor level (0-6)",
+        "syntax": "MON {n}",
+        "help": "Sets the monitoring level for displaying packets on the radio channel.\n\nLevels:\n  0 — monitor off\n  1 — only connected I-frames\n  2 — + unconnected I-frames\n  3 — + connect/disconnect frames (SABM, DISC, UA, DM)\n  4 — + supervisory frames (RR, RNR, REJ)\n  5 — + all UI frames\n  6 — all frames including beacon and digipeat\n\nDefault: 0 (KAM dual-port: 0/0)",
+        "default": "0",
+        "range": "0-6"
+      },
+      {
+        "cmd": "MCOM",
+        "type": "text",
+        "desc": "Monitor while connected",
+        "syntax": "MCOM ON|OFF",
+        "help": "Controls whether monitored traffic is shown during active connections.\n\nKAM is dual-port: MCOM ON/OFF sets HF/VHF independently.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MCON",
+        "type": "text",
+        "desc": "Monitor only connected stations",
+        "syntax": "MCON ON|OFF",
+        "help": "When ON, only packets from connected stations are monitored.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MALL",
+        "type": "text",
+        "desc": "Monitor all packets",
+        "syntax": "MALL ON|OFF",
+        "help": "When ON, monitors packets even from connected stations.\n\nDefault: ON"
+      },
+      {
+        "cmd": "MHEARD",
+        "type": "text",
+        "desc": "Show heard stations list",
+        "syntax": "MH",
+        "help": "Displays a list of stations heard recently with timestamps and byte counts."
+      },
+      {
+        "cmd": "MHCLEAR",
+        "type": "text",
+        "desc": "Clear heard stations list",
+        "syntax": "MHC",
+        "help": "Clears the heard stations list."
+      },
+      {
+        "cmd": "HEADERLN",
+        "type": "text",
+        "desc": "Separate header from data",
+        "syntax": "HEADERLN ON|OFF",
+        "help": "Controls whether packet headers are displayed on a separate line from data.\n\nDefault: ON"
+      },
+      {
+        "cmd": "MRPT",
+        "type": "text",
+        "desc": "Monitor repeated packets",
+        "syntax": "MRPT ON|OFF",
+        "help": "When ON, shows packets marked as digipeated.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MSTAMP",
+        "type": "text",
+        "desc": "Monitor timestamp",
+        "syntax": "MSTAMP ON|OFF",
+        "help": "When ON, adds timestamp to monitored packets.\n\nDefault: OFF"
+      }
+    ],
+    "Station Setup": [
+      {
+        "cmd": "MYCALL",
+        "type": "text",
+        "desc": "Set your callsign",
+        "syntax": "MY {callsign}[-SSID]",
+        "help": "Sets the callsign used for all transmissions.\n\nExamples:\n  MY EA7HQL\n  MY EA7HQL-5\n\nSSID (-0 to -15) can be appended. Default SSID is -0.\nYou MUST set this before connecting.\n\nKAM dual-port: MYCALL sets both HF and VHF."
+      },
+      {
+        "cmd": "MYALIAS",
+        "type": "text",
+        "desc": "Alternate digipeat callsign",
+        "syntax": "MYALIAS {callsign}[-SSID]",
+        "help": "Sets alternate identifier for digipeating.\n\nExample: MYALIAS MADRID-3\n\nStations can digipeat via MYCALL or MYALIAS.\nMust be different from MYCALL, MYNODE, MYPBBS, MYGATE.\n\nKAM dual-port: MYALIAS {HF}/{VHF}\n\nDefault: MYCALL"
+      },
+      {
+        "cmd": "MYNODE",
+        "type": "text",
+        "desc": "KA-NODE callsign",
+        "syntax": "MYNODE {callsign}[-SSID]",
+        "help": "Sets callsign for KA-NODE networking.\n\nConvention: MYCALL-7\n\nMust be different from MYCALL, MYALIAS, MYPBBS, MYGATE.\n\nDefault: MYCALL"
+      },
+      {
+        "cmd": "MYPBBS",
+        "type": "text",
+        "desc": "Personal mailbox callsign",
+        "syntax": "MYPBBS {callsign}[-SSID]",
+        "help": "Sets callsign for personal mailbox (PBBS).\n\nConvention: MYCALL-4\n\nMust be different from MYCALL, MYALIAS, MYNODE, MYGATE.\n\nDefault: none"
+      },
+      {
+        "cmd": "MYGATE",
+        "type": "text",
+        "desc": "Gateway callsign",
+        "syntax": "MYGATE {callsign}[-SSID]",
+        "help": "Sets callsign for HF/VHF gateway operation.\n\nConvention: MYCALL-2\n\nMust be different from MYCALL, MYALIAS, MYNODE, MYPBBS.\n\nDefault: none"
+      },
+      {
+        "cmd": "ECHO",
+        "type": "text",
+        "desc": "Local echo on/off",
+        "syntax": "ECHO ON|OFF",
+        "help": "Controls whether the TNC echoes back characters you type.\n\nECHO ON  — TNC echoes input\nECHO OFF — no echo (use if terminal has local echo)\n\nDefault: ON"
+      },
+      {
+        "cmd": "AUTOLF",
+        "type": "text",
+        "desc": "Auto line feed",
+        "syntax": "AUTOLF ON|OFF",
+        "help": "Adds LF after each CR received.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "FLOW",
+        "type": "text",
+        "desc": "Software flow control",
+        "syntax": "FLOW ON|OFF",
+        "help": "Enables XON/XOFF software flow control between TNC and terminal.\n\nDefault: ON"
+      },
+      {
+        "cmd": "PMODE",
+        "type": "text",
+        "desc": "Power-up mode",
+        "syntax": "PMODE NONE|CW|RTTY|ASCII|AMTOR|FEC|NAVTEX|PACTOR|GTOR",
+        "help": "Sets mode at power-up.\n\nNONE = Packet mode (default)\nOther values enter that mode automatically.\n\nDefault: NONE"
+      },
+      {
+        "cmd": "INTFACE",
+        "type": "text",
+        "desc": "Interface mode",
+        "syntax": "INTFACE TERMINAL|KISS|HOST",
+        "help": "Sets serial interface mode.\n\nTERMINAL — normal human operation\nKISS — KISS protocol for programs\nHOST — Kantronics host mode\n\nDefault: TERMINAL"
+      },
+      {
+        "cmd": "KAMPORT",
+        "type": "text",
+        "desc": "Active radio port (KAM only)",
+        "syntax": "KAMPORT HF|VHF",
+        "help": "Selects default radio port for commands.\n\nHF - port 1 (all modes)\nVHF - port 2 (packet only)\n\nDefault: VHF"
+      },
+      {
+        "cmd": "PERM",
+        "type": "text",
+        "desc": "Save parameters to EEPROM",
+        "syntax": "PERM",
+        "help": "Saves current parameters to EEPROM for power-on restoration.\n\nWithout PERM, changes revert to defaults at power-off.\n\nNote: With Battery Backup or SmartWatch, some parameters auto-save."
+      },
+      {
+        "cmd": "DAYTIME",
+        "type": "text",
+        "desc": "Set date and time",
+        "syntax": "DAYTIME YYMMDDHHMMSS",
+        "help": "Sets the internal clock.\n\nFormat: YY=year, MM=month, DD=day, HH=hour, MM=minute, SS=second\n\nExample: DAYTIME 250214173000 (Feb 14, 2025, 17:30:00)"
+      }
+    ],
+    "Packet Timing": [
+      {
+        "cmd": "TXDELAY",
+        "type": "text",
+        "desc": "TX keyup delay (10ms units)",
+        "syntax": "TXDELAY {n}",
+        "help": "Delay between keying TX and sending data.\n\nValues: 0-120 (10ms units)\nDefault: 30 (300ms)\n\nKAM dual-port: TXDELAY {HF}/{VHF}\n\nGuidelines:\n  Direct VHF: 20-30\n  Via repeater: 40-60\n  HF: 30-50",
+        "default": "30",
+        "range": "0-120"
+      },
+      {
+        "cmd": "FRACK",
+        "type": "text",
+        "desc": "Frame ack timeout (sec)",
+        "syntax": "FRACK {n}",
+        "help": "Seconds to wait for ACK before retransmitting.\n\nValues: 1-15\nDefault: 3\n\nKAM dual-port: FRACK {HF}/{VHF}\n\nGuidelines:\n  VHF direct: 3\n  Via digipeater: 5-7\n  HF: 8-15",
+        "default": "3",
+        "range": "1-15"
+      },
+      {
+        "cmd": "RETRY",
+        "type": "text",
+        "desc": "Max retries",
+        "syntax": "RETRY {n}",
+        "help": "Max retransmission attempts before disconnect.\n\nValues: 0-15\nDefault: 10\n\nKAM dual-port: RETRY {HF}/{VHF}",
+        "default": "10",
+        "range": "0-15"
+      },
+      {
+        "cmd": "PERSIST",
+        "type": "text",
+        "desc": "Persistence (0-255)",
+        "syntax": "PERSIST {n}",
+        "help": "CSMA persistence. Higher = more aggressive transmit.\n\nValues: 0-255\nDefault: 63\n\nKAM dual-port: PERSIST {HF}/{VHF}\n\nProbability = (PERSIST + 1) / 256\n  63 = 25% (shared channels)\n  255 = always transmit (point-to-point)",
+        "default": "63",
+        "range": "0-255"
+      },
+      {
+        "cmd": "SLOTTIME",
+        "type": "text",
+        "desc": "Slot time (10ms units)",
+        "syntax": "SLOTTIME {n}",
+        "help": "Time between PERSIST checks.\n\nValues: 0-255 (10ms units)\nDefault: 10 (100ms)\n\nKAM dual-port: SLOTTIME {HF}/{VHF}",
+        "default": "10",
+        "range": "0-255"
+      },
+      {
+        "cmd": "DWAIT",
+        "type": "text",
+        "desc": "Defer wait time",
+        "syntax": "DWAIT {n}",
+        "help": "Time slots to wait after DCD drops before transmitting.\n\nValues: 0-255\nDefault: 0\n\nKAM dual-port: DWAIT {HF}/{VHF}\n\nEach slot = SLOTTIME duration.",
+        "default": "0",
+        "range": "0-255"
+      }
+    ],
+    "Packet Advanced": [
+      {
+        "cmd": "PACLEN",
+        "type": "text",
+        "desc": "Max packet length (0-255)",
+        "syntax": "PACLEN {n}",
+        "help": "Maximum data bytes per AX.25 I-frame.\n\nValues: 0-255 (0 = 256)\nDefault: 128\n\nKAM dual-port: PACLEN {HF}/{VHF}\n\nGuidelines:\n  HF (300 baud): 40-80\n  VHF (1200 baud): 128\n  VHF (9600 baud): 255\n\nSmaller = fewer retransmissions on noisy links.",
+        "default": "128",
+        "range": "0-255"
+      },
+      {
+        "cmd": "MAXFRAME",
+        "type": "text",
+        "desc": "Max outstanding I-frames (1-7)",
+        "syntax": "MAXFRAME {n}",
+        "help": "Max unacknowledged I-frames before waiting for ACK.\n\nValues: 1-7\nDefault: 4\n\nKAM dual-port: MAXFRAME {HF}/{VHF}\n\nGuidelines:\n  HF: 1-2\n  VHF simplex: 3-4\n  VHF full-duplex: 7",
+        "default": "4",
+        "range": "1-7"
+      },
+      {
+        "cmd": "DIGIPEAT",
+        "type": "text",
+        "desc": "Enable digipeater",
+        "syntax": "DIGIPEAT ON|OFF",
+        "help": "When ON, TNC acts as a digipeater for MYCALL and MYALIAS.\n\nKAM dual-port: DIGIPEAT ON/OFF sets HF/VHF independently.\n\nDefault: ON"
+      },
+      {
+        "cmd": "PASSALL",
+        "type": "text",
+        "desc": "Pass all packets",
+        "syntax": "PASSALL ON|OFF",
+        "help": "When ON, passes packets even with CRC errors (for monitoring).\n\nKAM dual-port: PASSALL ON/OFF\n\nDefault: OFF"
+      },
+      {
+        "cmd": "8BITCONV",
+        "type": "text",
+        "desc": "8-bit converse mode",
+        "syntax": "8BITCONV ON|OFF",
+        "help": "When ON, allows 8-bit data in converse mode.\n\nIf terminal has problems in converse, try OFF.\n\nDefault: ON"
+      },
+      {
+        "cmd": "USERS",
+        "type": "text",
+        "desc": "Max simultaneous connections",
+        "syntax": "USERS {n}",
+        "help": "Max number of simultaneous packet connections.\n\nValues: 0-10\nDefault: 1\n\nKAM can handle multiple connections on HF and VHF.",
+        "default": "1",
+        "range": "0-10"
+      },
+      {
+        "cmd": "MAXUSERS",
+        "type": "text",
+        "desc": "Port configuration (KAM only)",
+        "syntax": "MAXUSERS {HF}/{VHF}",
+        "help": "Sets max users per port and port configuration.\n\n10/10 - HF and VHF both active (default)\n0/20 - VHF only (20 streams)\n20/0 - HF only (20 streams)\n\nDefault: 10/10"
+      },
+      {
+        "cmd": "CRADD",
+        "type": "text",
+        "desc": "Add CR to packets",
+        "syntax": "CRADD ON|OFF",
+        "help": "When ON, adds CR at end of packet data.\n\nDefault: OFF"
+      }
+    ],
+    "Beacon & Unproto": [
+      {
+        "cmd": "BEACON",
+        "type": "text",
+        "desc": "Beacon interval",
+        "syntax": "BEACON EVERY|AFTER {n}",
+        "help": "Sets beacon transmission:\n\nEVERY n - send beacon every n×10 seconds\nAFTER n - send once after n×10 sec of inactivity\n\nValues: 0-250 (0 = off)\nDefault: 0\n\nKAM dual-port: BEACON EVERY/AFTER {HF}/{VHF}\n\nExample: BEACON EVERY 90 (send every 15 minutes)",
+        "default": "EVERY 0"
+      },
+      {
+        "cmd": "BTEXT",
+        "type": "text",
+        "desc": "Beacon text",
+        "syntax": "BTEXT {text}",
+        "help": "Sets the text for beacon packets. Max 120 characters.\n\nExample: BTEXT EA7HQL VHF Packet in Madrid\n\nKAM dual-port: Set separately for HF/VHF using BLT command.\n\nDefault: empty"
+      },
+      {
+        "cmd": "UNPROTO",
+        "type": "text",
+        "desc": "Unproto destination",
+        "syntax": "UNPROTO {dest} [VIA {digi1},{digi2}]",
+        "help": "Sets destination for beacons and unconnected packets.\n\nExamples:\n  UNPROTO CQ\n  UNPROTO BEACON VIA WIDE2-2\n  UNPROTO APRS VIA RELAY,WIDE\n\nKAM dual-port: UNPROTO sets both ports.\n\nDefault: CQ"
+      },
+      {
+        "cmd": "BLT",
+        "type": "text",
+        "desc": "Beacon list text (KAM)",
+        "syntax": "BLT\n  {n} {text}",
+        "help": "Sets up to 4 beacon text buffers.\n\nEnter BLT, then at prompts:\n  >>1 {beacon text 1}\n  >>2 {beacon text 2}\n  >>3 {beacon text 3}\n  >>4 {beacon text 4}\n  >>LTP (list transmission periods)\n  >>1 EVERY hh:mm:ss\n  >>2 AFTER hh:mm:ss STARTING AT hh:mm:ss\n\nAllows multiple rotating beacons with different schedules."
+      },
+      {
+        "cmd": "ID",
+        "type": "text",
+        "desc": "Send ID packet",
+        "syntax": "ID",
+        "help": "Immediately sends an identification packet.\n\nUseful for sending final ID before shutdown."
+      },
+      {
+        "cmd": "HID",
+        "type": "text",
+        "desc": "Hourly ID beacon",
+        "syntax": "HID ON|OFF",
+        "help": "When ON, sends ID beacon every hour.\n\nKAM dual-port: HID ON/OFF\n\nDefault: OFF"
+      }
+    ],
+    "Connect Messages": [
+      {
+        "cmd": "CTEXT",
+        "type": "text",
+        "desc": "Connect text",
+        "syntax": "CTEXT {text}",
+        "help": "Message sent when someone connects to you. Max 120 characters.\n\nExample: CTEXT Welcome to EA7HQL - I'm QRT, leave msg\n\nDefault: empty"
+      },
+      {
+        "cmd": "CMSG",
+        "type": "text",
+        "desc": "Connect message mode",
+        "syntax": "CMSG ON|OFF|PBBS|DISC",
+        "help": "Controls behavior when station connects:\n\nON - send CTEXT, enter converse\nOFF - no message\nPBBS - redirect to personal mailbox\nDISC - send CTEXT then disconnect\n\nDefault: ON"
+      },
+      {
+        "cmd": "CBELL",
+        "type": "text",
+        "desc": "Connect bell",
+        "syntax": "CBELL ON|OFF",
+        "help": "When ON, sounds terminal bell when connection established.\n\nDefault: OFF"
+      }
+    ],
+    "CW Parameters": [
+      {
+        "cmd": "CWSPEED",
+        "type": "text",
+        "desc": "CW speed in WPM (5-99)",
+        "syntax": "CWSPEED {n}",
+        "help": "Sets the CW sending and receiving speed in words per minute.\n\nValues: 5-99\nDefault: 20\n\nCommon speeds:\n  15 – slow, comfortable for beginners\n  20 – standard QSO speed\n  30+ – contest/advanced",
+        "default": "20",
+        "range": "5-99"
+      },
+      {
+        "cmd": "CWTONE",
+        "type": "text",
+        "desc": "CW sidetone frequency in Hz",
+        "syntax": "CWTONE {n}",
+        "help": "Sets the receive CW filter center frequency.\n\nValues: 200-2000 Hz\nDefault: 750\n\nMatch this to your transceiver's sidetone frequency for best decoding.",
+        "default": "750",
+        "range": "200-2000"
+      },
+      {
+        "cmd": "CWID",
+        "type": "text",
+        "desc": "CW ID at end of transmission",
+        "syntax": "CWID ON|OFF",
+        "help": "When ON, the TNC sends your callsign in CW at the end of each transmission.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "CWWEIGHT",
+        "type": "text",
+        "desc": "CW keying weight (10-90)",
+        "syntax": "CWWEIGHT {n}",
+        "help": "Adjusts the CW dash-to-dot ratio.\n\nValues: 10-90\nDefault: 50 (standard 3:1 ratio)\n\nValues >50 produce heavier (longer) dashes.",
+        "default": "50",
+        "range": "10-90"
+      },
+      {
+        "cmd": "CWNORMAL",
+        "type": "text",
+        "desc": "Normal CW polarity",
+        "syntax": "CWNORMAL ON|OFF",
+        "help": "Sets CW decoding polarity.\n\nCWNORMAL ON — standard polarity (mark = high tone)\nCWNORMAL OFF — inverted polarity\n\nTry toggling if you can hear CW but it decodes as garbage.\n\nDefault: ON"
+      },
+      {
+        "cmd": "CWFARNSWORTH",
+        "type": "text",
+        "desc": "Farnsworth spacing speed",
+        "syntax": "CWFARNSWORTH {n}",
+        "help": "Sets Farnsworth character spacing. Characters are sent at CWSPEED but spacing between them is at CWFARNSWORTH speed.\n\nValues: 0-99 (0 = disabled)\nDefault: 0\n\nUseful for CW learning: set CWSPEED 20 and CWFARNSWORTH 10.",
+        "default": "0",
+        "range": "0-99"
+      },
+      {
+        "cmd": "CWBAND",
+        "type": "text",
+        "desc": "CW receive filter bandwidth",
+        "syntax": "CWBAND NARROW|MEDIUM|WIDE",
+        "help": "Sets the CW receive filter bandwidth.\n\nNARROW — ~100 Hz (best selectivity, requires accurate tuning)\nMEDIUM — ~200 Hz (good balance)\nWIDE — ~500 Hz (easier tuning, more noise)\n\nDefault: MEDIUM"
+      }
+    ],
+    "RTTY/ASCII Parameters": [
+      {
+        "cmd": "RBAUD",
+        "type": "text",
+        "desc": "RTTY baud rate",
+        "syntax": "RBAUD {n}",
+        "help": "Sets default RTTY baud rate for Baudot mode.\n\nCommon: 45 (standard amateur HF), 50, 57, 75.\nMax 300 on HF port.\n\nBaud/WPM correlation:\n  45 baud = 60 WPM\n  50 baud = 67 WPM\n  75 baud = 100 WPM\n\nDefault: 45",
+        "default": "45"
+      },
+      {
+        "cmd": "ASCBAUD",
+        "type": "text",
+        "desc": "ASCII baud rate",
+        "syntax": "ASCBAUD {n}",
+        "help": "Sets default baud for ASCII mode.\n\nStandard: 110 or 300.\n\nDefault: 110",
+        "default": "110"
+      },
+      {
+        "cmd": "SHIFT",
+        "type": "text",
+        "desc": "Mark/Space frequency shift (Hz)",
+        "syntax": "SHIFT {n}",
+        "help": "Sets RTTY shift.\n\nCommon values:\n170 - standard amateur\n200 - European commercial\n425 - wide\n850 - very wide\n\nCustom values 1-999 allowed.\n\nDefault: 170",
+        "default": "170"
+      },
+      {
+        "cmd": "INVERT",
+        "type": "text",
+        "desc": "Invert mark/space",
+        "syntax": "INVERT ON|OFF",
+        "help": "Inverts the sense of mark and space tones.\n\nTry toggling if you receive garbled text. Some stations use inverted polarity.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "AUTOCR",
+        "type": "text",
+        "desc": "Auto carriage return (chars/line)",
+        "syntax": "AUTOCR {n}",
+        "help": "Automatically inserts CR after n characters.\n\n0 = disabled.\n\nDefault: 72",
+        "default": "72"
+      },
+      {
+        "cmd": "CCITT",
+        "type": "text",
+        "desc": "European ITA2 RTTY code",
+        "syntax": "CCITT ON|OFF",
+        "help": "ON = European ITA2\nOFF = US TTY code\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MARK",
+        "type": "text",
+        "desc": "RTTY mark frequency (Hz)",
+        "syntax": "MARK {n}",
+        "help": "Sets mark tone frequency.\n\nValues: 1000-3000 Hz\nDefault: 2125\n\nNote: MARK, SPACE, and SHIFT are related. Setting any two determines the third.",
+        "default": "2125"
+      },
+      {
+        "cmd": "SPACE",
+        "type": "text",
+        "desc": "RTTY space frequency (Hz)",
+        "syntax": "SPACE {n}",
+        "help": "Sets space tone frequency.\n\nValues: 1000-3000 Hz\nDefault: 2295\n\nNote: MARK, SPACE, and SHIFT are related.",
+        "default": "2295"
+      }
+    ],
+    "AMTOR Parameters": [
+      {
+        "cmd": "AMTOR CONNECT",
+        "type": "text",
+        "desc": "Connect in ARQ mode",
+        "syntax": "AMTOR {selcall}",
+        "help": "Initiates an AMTOR ARQ (Automatic Repeat Request) connection.\n\nThe selcall is a 4-character code derived from the target station's callsign.\n\nExample:\n  AMTOR DGKV"
+      },
+      {
+        "cmd": "MYSEL4",
+        "type": "text",
+        "desc": "4-character AMTOR selcall",
+        "syntax": "MYSEL4 {selcall}",
+        "help": "Sets your 4-character AMTOR selective call.\n\nDerivation: First letter of callsign + last 3 letters.\nExample: W0XI → WWXI, DC7XJ → DCXJ\n\nDefault: none"
+      },
+      {
+        "cmd": "MYSEL7",
+        "type": "text",
+        "desc": "7-character AMTOR selcall",
+        "syntax": "MYSEL7 {selcall}",
+        "help": "Sets your 7-character AMTOR selective call (for SITOR).\n\nDefault: none"
+      },
+      {
+        "cmd": "AMTOR FEC",
+        "type": "text",
+        "desc": "Send FEC broadcast",
+        "syntax": "Ctrl+C T",
+        "help": "In AMTOR standby, press Ctrl+C then T to start FEC broadcast.\n\nFEC is a one-way mode – no acknowledgement from the receiving station. Good for CQ calls and broadcasts."
+      },
+      {
+        "cmd": "AMTOR LISTEN",
+        "type": "text",
+        "desc": "Listen for AMTOR calls",
+        "syntax": "AMTOR",
+        "help": "Places the TNC in AMTOR standby, listening for incoming ARQ calls addressed to your selcall.\n\nAlso receives FEC broadcasts."
+      },
+      {
+        "cmd": "LAMTOR",
+        "type": "text",
+        "desc": "Listen AMTOR ARQ",
+        "syntax": "LAMTOR ON|OFF",
+        "help": "When ON, allows monitoring of other stations' AMTOR ARQ links.\n\nDefault: OFF"
+      }
+    ],
+    "Gateway & Networking": [
+      {
+        "cmd": "GATEWAY",
+        "type": "text",
+        "desc": "Enable gateway mode",
+        "syntax": "GATEWAY ON|OFF",
+        "help": "Enables HF/VHF gateway operation.\n\nPackets received on one port are digipeated to the other if MYGATE is in path.\n\nWARNING: Gateway operation requires attended operation per FCC rules.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "LLIST",
+        "type": "text",
+        "desc": "Link list - gateway exclusions",
+        "syntax": "LLIST {call1},{call2},...",
+        "help": "List of callsigns NOT allowed to use gateway.\n\nUse to exclude stations without privileges on both bands.\n\nDefault: empty"
+      }
+    ],
+    "KA-NODE": [
+      {
+        "cmd": "JHEARD",
+        "type": "text",
+        "desc": "Request node heard list",
+        "syntax": "JHEARD [SHORT|LONG]",
+        "help": "When connected to KA-NODE, requests heard station list.\n\nSHORT - callsigns only\nLONG - includes paths\n\nThis is a directive sent from converse mode."
+      },
+      {
+        "cmd": "NODES",
+        "type": "text",
+        "desc": "Request node list",
+        "syntax": "NODES",
+        "help": "When connected to KA-NODE, displays list of known nodes.\n\nShows node callsigns, aliases, and quality.\n\nThis is a directive sent from converse mode."
+      },
+      {
+        "cmd": "XCONNECT",
+        "type": "text",
+        "desc": "Cross-port connect",
+        "syntax": "XCONNECT {callsign}",
+        "help": "When connected to KA-NODE, initiates connection to station on the OTHER port.\n\nExample: Connect to HF node, then XCONNECT to VHF station.\n\nThis is a directive sent from converse mode."
+      },
+      {
+        "cmd": "NTEXT",
+        "type": "text",
+        "desc": "Node greeting text",
+        "syntax": "NTEXT {text}",
+        "help": "Sets greeting message for KA-NODE.\n\nDefault: empty"
+      }
+    ],
+    "PBBS (Personal Mailbox)": [
+      {
+        "cmd": "PBBS",
+        "type": "text",
+        "desc": "Personal mailbox size",
+        "syntax": "PBBS {n}",
+        "help": "Sets mailbox buffer size in kilobytes.\n\nValues: 0-80 (0 = disabled)\nDefault: 0\n\nExample: PBBS 40 (40KB mailbox)",
+        "default": "0"
+      },
+      {
+        "cmd": "MAIL",
+        "type": "text",
+        "desc": "Mail waiting indicator",
+        "syntax": "MAIL ON|OFF",
+        "help": "When ON, STA LED blinks when you have mail.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "PTEXT",
+        "type": "text",
+        "desc": "PBBS greeting",
+        "syntax": "PTEXT {text}",
+        "help": "Sets greeting message for personal mailbox.\n\nDefault: empty"
+      },
+      {
+        "cmd": "PBUSERS",
+        "type": "text",
+        "desc": "Max mailbox users",
+        "syntax": "PBUSERS {n}",
+        "help": "Max simultaneous mailbox connections.\n\nValues: 0-10\nDefault: 1",
+        "default": "1",
+        "range": "0-10"
+      },
+      {
+        "cmd": "TOUT",
+        "type": "text",
+        "desc": "Mailbox timeout",
+        "syntax": "TOUT {n}",
+        "help": "Timeout for idle mailbox users (10 sec units).\n\nValues: 0-250\nDefault: 30 (5 minutes)",
+        "default": "30",
+        "range": "0-250"
+      },
+      {
+        "cmd": "MYREMOTE",
+        "type": "text",
+        "desc": "Remote sysop callsign",
+        "syntax": "MYREMOTE {callsign}",
+        "help": "Sets callsign allowed remote SYSOP access to PBBS.\n\nDefault: none"
+      },
+      {
+        "cmd": "RTEXT",
+        "type": "text",
+        "desc": "Remote sysop password",
+        "syntax": "RTEXT {password}",
+        "help": "Sets password for remote SYSOP access.\n\nDefault: empty"
+      }
+    ],
+    "APRS & UI Digipeating": [
+      {
+        "cmd": "UIDIGI",
+        "type": "text",
+        "desc": "UI digipeat aliases",
+        "syntax": "UIDIGI ON|OFF {alias1},{alias2},...",
+        "help": "Enables UI frame digipeating for listed aliases.\n\nExample: UIDIGI ON RELAY,WIDE,TRACE\n\nStations can digipeat via these aliases.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "UIFLOOD",
+        "type": "text",
+        "desc": "WIDEn-n flooding",
+        "syntax": "UIFLOOD {alias},{max} [,ID|NOID]",
+        "help": "Enables New Paradigm WIDEn-n digipeating.\n\nExample: UIFLOOD WIDE,7,ID\n\nalias - base alias (e.g., WIDE)\nmax - max n value (typically 7)\nID/NOID - insert MYCALL or not\n\nSupports WIDEn-n path reduction."
+      },
+      {
+        "cmd": "UITRACE",
+        "type": "text",
+        "desc": "TRACEn-n tracing",
+        "syntax": "UITRACE {alias},{max}",
+        "help": "Enables New Paradigm TRACEn-n digipeating with callsign insertion.\n\nExample: UITRACE TRACE,7\n\nInserts MYCALL in path for tracing."
+      },
+      {
+        "cmd": "UIDWAIT",
+        "type": "text",
+        "desc": "UI digi delay randomization",
+        "syntax": "UIDWAIT ON|OFF",
+        "help": "When ON, adds random delay to UI digipeats to reduce collisions.\n\nDefault: ON"
+      },
+      {
+        "cmd": "UISSID",
+        "type": "text",
+        "desc": "UI SSID processing",
+        "syntax": "UISSID ON|OFF",
+        "help": "When ON, processes UI packets based on destination SSID.\n\nDefault: OFF"
+      }
+    ],
+    "GPS & Position": [
+      {
+        "cmd": "GPSPORT",
+        "type": "text",
+        "desc": "GPS baud rate",
+        "syntax": "GPSPORT {n}",
+        "help": "Sets AUX port baud for GPS input.\n\nValues: 0 (off), 1200, 2400, 4800, 9600\nDefault: 0\n\nGPS must output NMEA sentences.",
+        "default": "0"
+      },
+      {
+        "cmd": "GPSINIT",
+        "type": "text",
+        "desc": "GPS initialization string",
+        "syntax": "GPSINIT {string}",
+        "help": "Sends initialization string to GPS receiver.\n\nUse Ctrl+N for multiple sentences.\n\nExample: GPSINIT $PMGNST,NMEA<Ctrl+N>"
+      },
+      {
+        "cmd": "GPSTEXT",
+        "type": "text",
+        "desc": "GPS position format",
+        "syntax": "GPSTEXT {format}",
+        "help": "Format string for GPS position beacons.\n\nUse %LAT%, %LON%, %ALT% placeholders.\n\nExample: GPSTEXT !%LAT%/%LON%>Comment"
+      }
+    ],
+    "Special Characters": [
+      {
+        "cmd": "COMMAND",
+        "type": "text",
+        "desc": "Command mode character",
+        "syntax": "COMMAND ${hex}",
+        "help": "Sets character to return to command mode from converse.\n\nDefault: $03 (Ctrl+C)",
+        "default": "$03"
+      },
+      {
+        "cmd": "CANLINE",
+        "type": "text",
+        "desc": "Cancel line character",
+        "syntax": "CANLINE ${hex}",
+        "help": "Sets the character that cancels current input line.\n\nDefault: $18 (Ctrl+X)",
+        "default": "$18"
+      },
+      {
+        "cmd": "CANPAC",
+        "type": "text",
+        "desc": "Cancel packet character",
+        "syntax": "CANPAC ${hex}",
+        "help": "Sets the character that cancels current packet.\n\nDefault: $19 (Ctrl+Y)",
+        "default": "$19"
+      },
+      {
+        "cmd": "REDISPLA",
+        "type": "text",
+        "desc": "Redisplay line character",
+        "syntax": "REDISPLA ${hex}",
+        "help": "Sets the character that redisplays current input line.\n\nDefault: $12 (Ctrl+R)",
+        "default": "$12"
+      },
+      {
+        "cmd": "STREAMSWITCH",
+        "type": "text",
+        "desc": "Stream switch character (KAM)",
+        "syntax": "STREAMSWITCH ${hex}",
+        "help": "Character to switch between HF/VHF streams in converse.\n\nDefault: $7C (|)\n\nType | to toggle between ports.",
+        "default": "$7C"
+      }
+    ],
+    "Serial Port": [
+      {
+        "cmd": "ABAUD",
+        "type": "text",
+        "desc": "Terminal baud rate",
+        "syntax": "ABAUD {n}",
+        "help": "Sets RS-232 terminal baud rate.\n\nCommon values:\n0 - autobaud\n300, 1200, 2400, 4800, 9600, 19200\n\nDefault: 0 (autobaud)\n\nUse RESTART after changing.",
+        "default": "0"
+      },
+      {
+        "cmd": "PARITY",
+        "type": "text",
+        "desc": "Serial parity",
+        "syntax": "PARITY NONE|ODD|EVEN",
+        "help": "Sets serial port parity.\n\nDefault: NONE"
+      }
+    ],
+    "Display": [
+      {
+        "cmd": "DISPLAY",
+        "type": "text",
+        "desc": "Display settings",
+        "syntax": "DISP [{class}]",
+        "help": "Shows TNC parameter values.\n\nClasses:\n  (none) - all settings\n  A - async/RS232\n  C - character/special\n  F - firmware version\n  H - health/statistics\n  I - ID parameters\n  L - link/timing\n  M - monitoring\n  R - RTTY/AMTOR\n  T - transmit timing\n\nSingle parameter: DISP PACLEN"
+      },
+      {
+        "cmd": "CALIBRATE",
+        "type": "text",
+        "desc": "Enter calibration mode",
+        "syntax": "CAL",
+        "help": "Enters calibration mode for adjusting transmitter audio levels.\n\nThe TNC transmits alternating tones. Press any key to exit."
+      },
+      {
+        "cmd": "STATUS",
+        "type": "text",
+        "desc": "Connection status",
+        "syntax": "STATUS",
+        "help": "Displays current connection status, streams, and channel information.\n\nShows who you're connected to and on which port."
+      },
+      {
+        "cmd": "VERSION",
+        "type": "text",
+        "desc": "Firmware version",
+        "syntax": "VERSION",
+        "help": "Displays firmware version and build information."
+      }
+    ],
+    "Reset & Restore": [
+      {
+        "cmd": "RESET",
+        "type": "text",
+        "desc": "Reset to factory defaults",
+        "syntax": "RESET",
+        "help": "Resets ALL parameters to factory defaults.\n\nWARNING: Erases callsign and all settings.\n\nHard reset: Power off, hold front panel button, power on."
+      },
+      {
+        "cmd": "RESTORE",
+        "type": "text",
+        "desc": "Restore saved parameters",
+        "syntax": "RESTORE",
+        "help": "Restores parameters from the last SAVE command.\n\nOnly works if SAVE was used previously."
+      },
+      {
+        "cmd": "SAVE",
+        "type": "text",
+        "desc": "Save current parameters",
+        "syntax": "SAVE",
+        "help": "Saves current parameters for RESTORE command.\n\nDifferent from PERM - this is a temporary save."
+      }
+    ],
+    "Special Keys": [
+      {
+        "cmd": "Ctrl+C",
+        "type": "key",
+        "desc": "Exit converse / command mode",
+        "key": "ctrl+C",
+        "help": "Sends Ctrl+C (0x03) to return to the cmd: prompt from converse or data mode."
+      },
+      {
+        "cmd": "Ctrl+D",
+        "type": "key",
+        "desc": "Send Ctrl+D (EOT)",
+        "key": "ctrl+D",
+        "help": "Sends End of Transmission character (0x04). Used in some file transfer protocols."
+      },
+      {
+        "cmd": "ESC",
+        "type": "key",
+        "desc": "Send Escape character",
+        "key": "escape",
+        "help": "Sends ESC (0x1B). Some TNCs use this for special functions."
+      },
+      {
+        "cmd": "Break",
+        "type": "key",
+        "desc": "Send serial BREAK signal",
+        "key": "break",
+        "help": "Sends a serial BREAK signal. Used for autobaud detection or hardware reset on some TNCs."
+      }
+    ]
+  },
+  "connectors": {
+    "Computer Port": "DB-25 RS-232 (DTE). Pin 2: TxD (out to computer), Pin 3: RxD (in from computer), Pin 4: RTS (out), Pin 5: CTS (in), Pin 7: GND, Pin 8: DCD (out, link status), Pin 20: DTR (out).",
+    "Radio Port 1 (HF)": "DB-9 female. Pin 1: TXA (AFSK out, 10mV-3V p-p adjustable), Pin 2: XCD (ext carrier detect in), Pin 3: PTT (out, active low), Pin 4: CW KEY/CTRL (out), Pin 5: RXA (audio in, 10K impedance), Pin 6: GND, Pin 7: FSK (out, TTL), Pin 9: GND.",
+    "Radio Port 2 (VHF)": "DB-9 male. Pin 1: TXA (AFSK out), Pin 2: XCD (ext carrier detect in), Pin 3: PTT (out, active low), Pin 4: CTRL (out), Pin 5: RXA (audio in), Pin 6: GND, Pin 7: FSK (out, TTL), Pin 9: GND.",
+    "AUX Port": "DB-9. RS-232 DTE port for GPS, weather stations, or NET/ROM node stacking. Can be configured with GPSPORT or NBAUD commands.",
+    "Power": "2.1mm coaxial, center positive, +12V DC (10-16V acceptable), 300mA typical, 500mA max."
+  },
+  "notes": {
+    "dual_port_commands": "Many KAM commands are dual-port with format: COMMAND {HF}/{VHF}. Examples: TXDELAY 30/25, MONITOR 4/0, BEACON EVERY 0/90. Set independently for each port.",
+    "firmware_history": "KAM original (1986-1994), KAM Plus (1994-2003) with PACTOR. KAM XL (2000+) with DSP, G-TOR, PSK31. Version 8.2 (1995) added New Paradigm APRS digipeating.",
+    "ka_node": "KA-NODE is Kantronics' network node system. Different from NET/ROM but similar concept. Uses MYNODE callsign (typically MYCALL-7).",
+    "gateway_warning": "Gateway operation (HF↔VHF) requires attended operation per FCC Part 97 rules. Use LLIST to exclude stations without dual-band privileges.",
+    "kiss_mode": "To enter KISS: INTFACE KISS, RESTART. To exit KISS: send 0xC0 0xFF 0xC0, or power cycle.",
+    "battery_backup": "Optional battery backup or SmartWatch retains settings without PERM. Check jumpers and battery installation in manual."
+  }
+}

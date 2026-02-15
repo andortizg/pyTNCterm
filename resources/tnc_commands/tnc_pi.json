@@ -1,0 +1,48 @@
+{
+  "model": "TNC-Pi",
+  "categories": {
+    "Connection": [
+      {"cmd": "CONNECT", "type": "text", "desc": "Connect to a station", "syntax": "C {call} [VIA {digi1},{digi2}]"},
+      {"cmd": "DISCONNECT", "type": "text", "desc": "Disconnect current session", "syntax": "D"},
+      {"cmd": "RECONNECT", "type": "text", "desc": "Reconnect to last station", "syntax": "C"}
+    ],
+    "Mode Control": [
+      {"cmd": "Command mode", "type": "key", "desc": "Return to command mode from converse mode", "key": "ctrl+C"},
+      {"cmd": "CONVERSE", "type": "text", "desc": "Enter converse (transparent) mode", "syntax": "K"}
+    ],
+    "Monitoring": [
+      {"cmd": "MONITOR", "type": "text", "desc": "Enable/disable monitor", "syntax": "MON ON|OFF"},
+      {"cmd": "MCOM", "type": "text", "desc": "Monitor while connected", "syntax": "MCOM ON|OFF"},
+      {"cmd": "MCON", "type": "text", "desc": "Monitor only connected stations", "syntax": "MCON ON|OFF"},
+      {"cmd": "HEADERLN", "type": "text", "desc": "Separate header from data", "syntax": "HEADERLN ON|OFF"},
+      {"cmd": "MHEARD", "type": "text", "desc": "Show heard stations list", "syntax": "MH"}
+    ],
+    "Station Setup": [
+      {"cmd": "MYCALL", "type": "text", "desc": "Set your callsign", "syntax": "MY {callsign}"},
+      {"cmd": "ECHO", "type": "text", "desc": "Local echo on/off", "syntax": "ECHO ON|OFF"},
+      {"cmd": "AUTOLF", "type": "text", "desc": "Auto line feed after CR", "syntax": "AUTOLF ON|OFF"},
+      {"cmd": "BEACON", "type": "text", "desc": "Set beacon text", "syntax": "BTEXT {text}"},
+      {"cmd": "BEACON EVERY", "type": "text", "desc": "Beacon interval (0=off, in 10s units)", "syntax": "BEACON EVERY {n}"},
+      {"cmd": "UNPROTO", "type": "text", "desc": "Set unproto path", "syntax": "UNPROTO {path}"}
+    ],
+    "Packet Parameters": [
+      {"cmd": "PACLEN", "type": "text", "desc": "Max packet data length (1-255)", "syntax": "PACLEN {n}"},
+      {"cmd": "MAXFRAME", "type": "text", "desc": "Max outstanding I-frames (1-7)", "syntax": "MAXFRAME {n}"},
+      {"cmd": "FRACK", "type": "text", "desc": "Frame acknowledge timeout in seconds", "syntax": "FRACK {n}"},
+      {"cmd": "RETRY", "type": "text", "desc": "Max retransmission attempts (0-15)", "syntax": "RETRY {n}"},
+      {"cmd": "TXDELAY", "type": "text", "desc": "TX keyup delay in 10ms units", "syntax": "TXDELAY {n}"},
+      {"cmd": "PERSIST", "type": "text", "desc": "Persistence value (0-255)", "syntax": "PERSIST {n}"},
+      {"cmd": "SLOTTIME", "type": "text", "desc": "Slot time in 10ms units", "syntax": "SLOTTIME {n}"},
+      {"cmd": "DWAIT", "type": "text", "desc": "Delay before transmit in 10ms units", "syntax": "DWAIT {n}"},
+      {"cmd": "CHECK", "type": "text", "desc": "AX.25 inactivity timeout in seconds", "syntax": "CHECK {n}"},
+      {"cmd": "DIGIPEAT", "type": "text", "desc": "Digipeater function on/off", "syntax": "DIGIPEAT ON|OFF"}
+    ],
+    "Information": [
+      {"cmd": "DISPLAY", "type": "text", "desc": "Display all current settings", "syntax": "DISP"},
+      {"cmd": "CALIBRATE", "type": "text", "desc": "Enter calibration mode (send tones)", "syntax": "CAL"}
+    ],
+    "Reset": [
+      {"cmd": "RESET", "type": "text", "desc": "Reset TNC to factory defaults", "syntax": "RESET"}
+    ]
+  }
+}
