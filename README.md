@@ -2,7 +2,7 @@
 
 **A portable multi-mode TNC terminal for amateur radio digital communications.**
 
-pyTNCterm is a modern, cross-platform terminal program for controlling hardware TNCs (Terminal Node Controllers) used in packet radio and other amateur radio digital modes. It provides a clean, themeable GUI with split RX/TX terminal, AX.25 monitor with frame-type coloring, YAPP file transfers, model-specific TNC command reference, and autocomplete — all in a single lightweight Python/Tkinter application.
+pyTNCterm is a modern, cross-platform terminal program for controlling hardware TNCs (Terminal Node Controllers) used in packet radio and other amateur radio digital modes. It provides a clean, themeable GUI with split RX/TX terminal, AX.25 monitor with frame-type coloring, YAPP file transfers, model-specific TNC command reference, and autocomplete, all in a single lightweight Python/Tkinter application.
 
 ---
 
