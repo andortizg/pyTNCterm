@@ -4,62 +4,66 @@ from tkinter import colorchooser, filedialog, font as tkfont
 from gui import theme
 from serial_port.serial_handler import SerialHandler
 
-# TNC model definitions: model name -> (supported modes list, default init commands)
+# Init command templates. "{CALL}" is replaced by the station callsign.
+_INIT_AEA = ("MYCALL {CALL}\nECHO OFF\nXFLOW OFF\nAUTOLF ON\n8BITCONV ON\n"
+             "MONITOR 4\nMCOM ON\n")
+_INIT_KANTRONICS = ("INTFACE TERMINAL\nMYCALL {CALL}\nECHO OFF\nXFLOW OFF\nAUTOLF ON\n"
+                    "8BITCONV ON\nMONITOR ON\nMCOM ON\n")
+_INIT_TNC2 = "MYCALL {CALL}\nECHO OFF\nXFLOW OFF\nAUTOLF ON\nMONITOR ON\nMCOM ON\n"
+
+# TNC model definitions: model name -> {modes: list of str, init: str default init commands}
 TNC_MODELS = {
-    "Generic / TNC-2 Compatible": {
-        "modes": ["Packet"],
-        "init": "ECHO ON\nMON ON\nMCOM ON\n",
-    },
-    "Kantronics KPC-3 / KPC-3+": {
-        "modes": ["Packet"],
-        "init": "INT TERMINAL\nECHO ON\nMON ON\nMCOM ON\nFLOW OFF\n",
-    },
+    "Generic / TNC-2 Compatible": {"modes": ["Packet"], "init": _INIT_TNC2},
+    "Kantronics KPC-3 / KPC-3+": {"modes": ["Packet"], "init": _INIT_KANTRONICS},
     "Kantronics KAM / KAM+": {
-        "modes": ["Packet", "CW", "RTTY", "AMTOR"],
-        "init": "INT TERMINAL\nECHO ON\nMON ON\nMCOM ON\nFLOW OFF\n",
-    },
+        "modes": ["Packet", "CW", "RTTY", "AMTOR"], "init": _INIT_KANTRONICS},
     "Kantronics KAM-XL": {
-        "modes": ["Packet", "CW", "RTTY", "AMTOR", "PACTOR"],
-        "init": "INT TERMINAL\nECHO ON\nMON ON\nMCOM ON\nFLOW OFF\n",
-    },
+        "modes": ["Packet", "CW", "RTTY", "AMTOR", "PACTOR"], "init": _INIT_KANTRONICS},
     "AEA / Timewave PK-232": {
-        "modes": ["Packet", "CW", "RTTY", "AMTOR", "SSTV", "FAX"],
-        "init": "ECHO ON\nMON ON\nMCOM ON\n",
-    },
-    "AEA PK-88": {
-        "modes": ["Packet"],
-        "init": "ECHO ON\nMON ON\nMCOM ON\n",
-    },
-    "MFJ-1270 / MFJ-1274": {
-        "modes": ["Packet"],
-        "init": "ECHO ON\nMON ON\nMCOM ON\n",
-    },
+        "modes": ["Packet", "CW", "RTTY", "AMTOR", "SSTV", "FAX"], "init": _INIT_AEA},
+    "AEA PK-88": {"modes": ["Packet"], "init": _INIT_AEA},
+    "MFJ-1270 / MFJ-1274": {"modes": ["Packet"], "init": _INIT_TNC2},
     "MFJ-1278 / MFJ-1278B": {
-        "modes": ["Packet", "CW", "RTTY", "AMTOR", "SSTV", "FAX"],
-        "init": "ECHO ON\nMON ON\nMCOM ON\n",
-    },
+        "modes": ["Packet", "CW", "RTTY", "AMTOR", "SSTV", "FAX"], "init": _INIT_TNC2},
     "SCS PTC-II / IIe / IIpro": {
         "modes": ["Packet", "PACTOR", "PACTOR-II", "RTTY", "CW", "AMTOR", "PSK31"],
-        "init": "ECHO 1\nMON 3\n",
-    },
+        "init": "ECHO 1\nMON 3\n"},
     "SCS PTC-III": {
         "modes": ["Packet", "PACTOR", "PACTOR-II", "PACTOR-III", "RTTY", "CW", "AMTOR",
-                   "PSK31"],
-        "init": "ECHO 1\nMON 3\n",
-    },
-    "SCS Tracker / DSP TNC": {
-        "modes": ["Packet", "APRS"],
-        "init": "",
-    },
-    "TNC-Pi": {
-        "modes": ["Packet", "APRS"],
-        "init": "ECHO ON\nMON ON\n",
-    },
-    "Other": {
-        "modes": ["Packet"],
-        "init": "",
-    },
+                  "PSK31"],
+        "init": "ECHO 1\nMON 3\n"},
+    "SCS Tracker / DSP TNC": {"modes": ["Packet", "APRS"], "init": ""},
+    "TNC-Pi": {"modes": ["Packet", "APRS"], "init": ""},
+    "Other": {"modes": ["Packet"], "init": ""},
 }
+
+# Defaults shipped by previous versions (replaced automatically by the new ones)
+LEGACY_INITS = {
+    "ECHO ON\nMON ON\nMCOM ON",
+    "INT TERMINAL\nECHO ON\nMON ON\nMCOM ON\nFLOW OFF",
+    "ECHO ON\nMON ON",
+}
+
+SEND_MODES = {"line": "On Enter (line mode)", "char": "Each key as typed (character mode)"}
+LINE_ENDINGS = {"CR": "CR", "LF": "LF", "CRLF": "CR+LF", "None": "Nothing"}
+
+
+def get_init_commands(config, model):
+    """
+    Returns the init commands for a model: the user's text, or the model default
+    if the user never changed it (or it is a legacy default).
+
+    Args:
+        config: Config - application configuration
+        model: str - TNC model name
+
+    Returns: str - init commands, one per line
+    """
+    default = TNC_MODELS.get(model, TNC_MODELS["Other"])["init"]
+    user = config.get("tnc", "init_commands", default=None)
+    if user is None or user.strip() in LEGACY_INITS:
+        return default
+    return user
 
 
 class SettingsDialog(tk.Toplevel):
@@ -80,7 +84,7 @@ class SettingsDialog(tk.Toplevel):
         self._color_labels = {}
 
         self.title("Settings")
-        self.geometry("580x580")
+        self.geometry("620x690")
         self.resizable(False, False)
         self.configure(bg=theme.get("dialog_bg"))
         self.transient(parent)
@@ -186,24 +190,37 @@ class SettingsDialog(tk.Toplevel):
         )
         ac_check.pack(side=tk.LEFT)
 
+        # Auto-init / handshake toggles
+        self._auto_init_var = tk.BooleanVar(
+            value=self._config.get("tnc", "auto_init", default=True))
+        self._handshake_var = tk.BooleanVar(
+            value=self._config.get("tnc", "handshake", default=True))
+        self._add_check(grid, 3, "On Connect:", self._auto_init_var,
+                        "Initialize TNC (send init commands)")
+        self._add_check(grid, 4, "", self._handshake_var,
+                        "Detect TNC first (probe / autobaud '*' / baud scan)")
+
         # Init commands (editable text area)
         tk.Label(frame, text="Initialization Commands", font=("Segoe UI", 10, "bold"),
                  bg=theme.get("dialog_bg"), fg=theme.get("accent_cyan")
                  ).pack(anchor="w", padx=24, pady=(16, 4))
 
-        tk.Label(frame, text="(sent to TNC after connecting, one command per line)",
+        hint_row = tk.Frame(frame, bg=theme.get("dialog_bg"))
+        hint_row.pack(fill=tk.X, padx=24, pady=(0, 4))
+        tk.Label(hint_row, text="One per line. {CALL} = callsign, @WAIT ms = pause, "
+                                "# = comment",
                  font=("Segoe UI", 8), bg=theme.get("dialog_bg"),
-                 fg=theme.get("text_dim")).pack(anchor="w", padx=24, pady=(0, 4))
+                 fg=theme.get("text_dim")).pack(side=tk.LEFT)
+        ttk.Button(hint_row, text="Restore default", style="TButton",
+                   command=self._restore_default_init).pack(side=tk.RIGHT)
 
         init_frame = tk.Frame(frame, bg=theme.get("border_color"), bd=1)
         init_frame.pack(fill=tk.BOTH, expand=True, padx=24, pady=(0, 8))
 
-        current_init = self._config.get("tnc", "init_commands",
-                                        default=TNC_MODELS.get(current_model, {}).get(
-                                            "init", ""))
+        current_init = get_init_commands(self._config, current_model)
         self._init_text = tk.Text(
             init_frame, bg=theme.get("entry_bg"), fg=theme.get("entry_fg"),
-            font=("Consolas", 10), wrap=tk.WORD, height=8,
+            font=("Consolas", 10), wrap=tk.WORD, height=7,
             borderwidth=0, highlightthickness=0, padx=6, pady=4,
             insertbackground=theme.get("accent_secondary"),
             selectbackground=theme.get("bg_highlight"), selectforeground="#ffffff",
@@ -232,12 +249,20 @@ class SettingsDialog(tk.Toplevel):
         # Check if current text matches any model's default
         is_default = False
         for m_info in TNC_MODELS.values():
-            if current_init_text == m_info["init"].strip():
+            if current_init_text == m_info["init"].strip() \
+                    or current_init_text in LEGACY_INITS:
                 is_default = True
                 break
         if is_default or not current_init_text:
             self._init_text.delete("1.0", tk.END)
             self._init_text.insert("1.0", info["init"])
+
+    def _restore_default_init(self):
+        """Replaces the init commands text with the default for the selected model."""
+        model = self._vars.get("tnc.model", tk.StringVar()).get()
+        info = TNC_MODELS.get(model, TNC_MODELS["Other"])
+        self._init_text.delete("1.0", tk.END)
+        self._init_text.insert("1.0", info["init"])
 
     def _build_serial_tab(self, parent):
         """Builds the Serial Port settings tab. Returns: tk.Frame"""
@@ -270,9 +295,37 @@ class SettingsDialog(tk.Toplevel):
                         self._config.get("serial", "flow_control", default="None"))
 
         btn_frame = tk.Frame(frame, bg=theme.get("dialog_bg"))
-        btn_frame.pack(fill=tk.X, padx=24, pady=(12, 0))
+        btn_frame.pack(fill=tk.X, padx=24, pady=(8, 0))
         ttk.Button(btn_frame, text="↻ Refresh Ports", style="TButton",
                    command=self._refresh_ports).pack(side=tk.LEFT)
+
+        # Keyboard / transmission
+        tk.Label(frame, text="Keyboard Transmission", font=("Segoe UI", 10, "bold"),
+                 bg=theme.get("dialog_bg"), fg=theme.get("accent_cyan")
+                 ).pack(anchor="w", padx=24, pady=(14, 4))
+        grid2 = tk.Frame(frame, bg=theme.get("dialog_bg"))
+        grid2.pack(fill=tk.X, padx=24)
+        cur_mode = self._config.get("serial", "send_mode", default="line")
+        self._add_combo(grid2, 0, "Send Characters:", "serial.send_mode",
+                        list(SEND_MODES.values()),
+                        SEND_MODES.get(cur_mode, SEND_MODES["line"]))
+        cur_eol = self._config.get("serial", "line_ending", default="CR")
+        self._add_combo(grid2, 1, "On Enter Send:", "serial.line_ending",
+                        list(LINE_ENDINGS.values()),
+                        LINE_ENDINGS.get(cur_eol, "CR"))
+
+        # YAPP
+        tk.Label(frame, text="YAPP Transfers", font=("Segoe UI", 10, "bold"),
+                 bg=theme.get("dialog_bg"), fg=theme.get("accent_cyan")
+                 ).pack(anchor="w", padx=24, pady=(14, 4))
+        grid3 = tk.Frame(frame, bg=theme.get("dialog_bg"))
+        grid3.pack(fill=tk.X, padx=24)
+        self._yapp_trans_var = tk.BooleanVar(
+            value=self._config.get("yapp", "transparent", default=True))
+        self._add_check(grid3, 0, "TNC Mode:", self._yapp_trans_var,
+                        "Switch TNC to TRANSparent mode during transfer")
+        self._add_entry(grid3, 1, "Block Delay (ms):", "yapp.block_delay_ms",
+                        str(self._config.get("yapp", "block_delay_ms", default=0)))
         return frame
 
     def _build_appearance_tab(self, parent):
@@ -388,6 +441,29 @@ class SettingsDialog(tk.Toplevel):
                  ).grid(row=row, column=1, sticky="we", pady=4)
         grid.columnconfigure(1, weight=1)
 
+    def _add_check(self, grid, row, label, var, text):
+        """
+        Adds a label + checkbutton row.
+
+        Args:
+            grid: tk.Frame - grid container
+            row: int - grid row
+            label: str - left label text
+            var: tk.BooleanVar - bound variable
+            text: str - checkbutton text
+        """
+        tk.Label(grid, text=label, font=("Segoe UI", 10),
+                 bg=theme.get("dialog_bg"), fg=theme.get("text_primary"), anchor="w"
+                 ).grid(row=row, column=0, sticky="w", pady=2, padx=(0, 8))
+        tk.Checkbutton(
+            grid, text=text, variable=var,
+            bg=theme.get("dialog_bg"), fg=theme.get("text_primary"),
+            selectcolor=theme.get("entry_bg"),
+            activebackground=theme.get("dialog_bg"),
+            activeforeground=theme.get("text_primary"),
+            font=("Segoe UI", 9),
+        ).grid(row=row, column=1, sticky="w", pady=2)
+
     def _add_combo(self, grid, row, label, var_key, values, current):
         """Adds a label + combobox row."""
         tk.Label(grid, text=label, font=("Segoe UI", 10),
@@ -468,6 +544,8 @@ class SettingsDialog(tk.Toplevel):
         self._config.set("tnc", "init_commands",
                          self._init_text.get("1.0", "end-1c"))
         self._config.set("tnc", "autocomplete", self._ac_var.get())
+        self._config.set("tnc", "auto_init", self._auto_init_var.get())
+        self._config.set("tnc", "handshake", self._handshake_var.get())
 
         # Serial
         self._config.set("serial", "port", self._vars.get("serial.port", tk.StringVar()).get())
@@ -484,6 +562,18 @@ class SettingsDialog(tk.Toplevel):
                          self._vars.get("serial.parity", tk.StringVar()).get())
         self._config.set("serial", "flow_control",
                          self._vars.get("serial.flow_control", tk.StringVar()).get())
+
+        mode_label = self._vars.get("serial.send_mode", tk.StringVar()).get()
+        self._config.set("serial", "send_mode",
+                         next((k for k, v in SEND_MODES.items() if v == mode_label), "line"))
+        eol_label = self._vars.get("serial.line_ending", tk.StringVar()).get()
+        self._config.set("serial", "line_ending",
+                         next((k for k, v in LINE_ENDINGS.items() if v == eol_label), "CR"))
+
+        # YAPP
+        self._config.set("yapp", "transparent", self._yapp_trans_var.get())
+        delay = self._vars.get("yapp.block_delay_ms", tk.StringVar()).get().strip()
+        self._config.set("yapp", "block_delay_ms", int(delay) if delay.isdigit() else 0)
 
         # Theme
         selected_theme = self._vars.get("appearance.theme", tk.StringVar()).get()

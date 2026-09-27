@@ -4,13 +4,14 @@ from tkinter import messagebox
 import os
 import queue
 import threading
+import time
 
 from gui import theme
 from gui.monitor_panel import MonitorPanel
 from gui.terminal_tab import TerminalTab
 from gui.status_bar import StatusBar
 from gui.toolbar import Toolbar
-from gui.dialogs.settings_dialog import SettingsDialog
+from gui.dialogs.settings_dialog import SettingsDialog, get_init_commands
 from gui.dialogs.about_dialog import AboutDialog
 from gui.dialogs.help_dialog import HelpDialog
 from gui.dialogs.command_reference import CommandReferenceDialog
@@ -19,6 +20,7 @@ from serial_port.serial_handler import SerialHandler
 from core.config import Config
 from core import tnc_commands
 from core.yapp_handler import YappHandler, YappEvent
+from core.tnc_init import TncInitializer
 from gui.dialogs.yapp_dialog import YappTransferDialog
 
 
@@ -33,6 +35,10 @@ class MainWindow:
 
     POLL_INTERVAL_MS = 50
     STATS_INTERVAL_MS = 1000
+    # Line terminators sent on Enter (config key serial.line_ending)
+    EOL_BYTES = {"CR": "\r", "LF": "\n", "CRLF": "\r\n", "None": ""}
+    # Guard time around the 3 Ctrl-C used to leave transparent mode (> CMDTIME)
+    TRANS_GUARD_S = 1.5
 
     def __init__(self, root):
         self.root = root
@@ -40,6 +46,15 @@ class MainWindow:
         self.serial = SerialHandler()
         self._yapp = None          # YappHandler (created per transfer)
         self._yapp_dialog = None   # YappTransferDialog
+        # _ui_queue: queue.Queue of (callable, args) - work posted from other
+        # threads, executed in the Tk thread by _poll_serial
+        self._ui_queue = queue.Queue()
+        # _initializer: TncInitializer or None - running handshake/init
+        self._initializer = None
+        # _pending_cr: bool - last RX chunk ended with CR (for CR/LF normalization)
+        self._pending_cr = False
+        # _yapp_trans: bool - TNC was switched to transparent mode for YAPP
+        self._yapp_trans = False
 
         # Load saved theme
         saved_theme = self.config.get("appearance", "theme", default="Dark Blue")
@@ -90,22 +105,29 @@ class MainWindow:
         file_menu.add_command(label="Settings...", command=self._open_settings,
                               accelerator="Ctrl+,")
         file_menu.add_separator()
-        file_menu.add_command(label="Quit", command=self._on_close, accelerator="Ctrl+Q")
+        file_menu.add_command(label="Quit", command=self._on_close,
+                              accelerator="Ctrl+Shift+Q")
         menubar.add_cascade(label="File", menu=file_menu)
 
         # Connection
         conn_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
-        conn_menu.add_command(label="Connect", command=self._connect, accelerator="Ctrl+K")
+        conn_menu.add_command(label="Connect", command=self._connect,
+                              accelerator="Ctrl+Shift+K")
         conn_menu.add_command(label="Disconnect", command=self._disconnect,
-                              accelerator="Ctrl+D")
+                              accelerator="Ctrl+Shift+D")
+        conn_menu.add_separator()
+        conn_menu.add_command(label="Initialize TNC", command=self._start_tnc_init,
+                              accelerator="Ctrl+Shift+I")
+        conn_menu.add_command(label="Send BREAK",
+                              command=lambda: self._execute_key({"key": "break"}))
         menubar.add_cascade(label="Connection", menu=conn_menu)
 
         # YAPP
         yapp_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
         yapp_menu.add_command(label="Send File...", command=self._yapp_send,
-                              accelerator="Ctrl+S")
+                              accelerator="Ctrl+Shift+S")
         yapp_menu.add_command(label="Receive File...", command=self._yapp_receive,
-                              accelerator="Ctrl+R")
+                              accelerator="Ctrl+Shift+R")
         yapp_menu.add_separator()
         yapp_menu.add_command(label="Set Download Directory...",
                               command=self._yapp_set_download_dir)
@@ -114,7 +136,7 @@ class MainWindow:
         # View
         view_menu = tk.Menu(menubar, tearoff=0, **menu_opts)
         view_menu.add_command(label="Clear Connection", command=self._clear_terminal,
-                              accelerator="Ctrl+L")
+                              accelerator="Ctrl+Shift+L")
         view_menu.add_command(label="Clear TX History", command=self._clear_tx)
         view_menu.add_command(label="Clear Monitor", command=self._clear_monitor)
         view_menu.add_separator()
@@ -170,7 +192,8 @@ class MainWindow:
         # Tab 1: Connection (interactive terminal)
         self.terminal = TerminalTab(self._notebook, self.config,
                                     on_send=self._on_send,
-                                    on_execute=self._on_execute_command)
+                                    on_execute=self._on_execute_command,
+                                    on_raw=self._on_raw)
         self._notebook.add(self.terminal, text="  ⚡ Connection  ")
 
         # Tab 2: Monitor (raw traffic with frame coloring)
@@ -198,15 +221,18 @@ class MainWindow:
             pass
 
     def _bind_keys(self):
-        """Binds keyboard shortcuts."""
-        self.root.bind("<Control-q>", lambda e: self._on_close())
-        self.root.bind("<Control-Q>", lambda e: self._on_close())
-        self.root.bind("<Control-k>", lambda e: self._connect())
-        self.root.bind("<Control-K>", lambda e: self._connect())
-        self.root.bind("<Control-d>", lambda e: self._disconnect())
-        self.root.bind("<Control-D>", lambda e: self._disconnect())
-        self.root.bind("<Control-l>", lambda e: self._clear_terminal())
-        self.root.bind("<Control-L>", lambda e: self._clear_terminal())
+        """
+        Binds keyboard shortcuts. Application shortcuts use Ctrl+Shift+letter because
+        plain Ctrl+letter in the TX area is sent to the TNC as a control character.
+        """
+        shortcuts = {
+            "Q": self._on_close, "K": self._connect, "D": self._disconnect,
+            "L": self._clear_terminal, "I": self._start_tnc_init,
+            "S": self._yapp_send, "R": self._yapp_receive,
+        }
+        for letter, fn in shortcuts.items():
+            self.root.bind(f"<Control-Shift-{letter}>", lambda e, f=fn: f())
+            self.root.bind(f"<Control-Shift-{letter.lower()}>", lambda e, f=fn: f())
         self.root.bind("<Control-comma>", lambda e: self._open_settings())
         self.root.bind("<F1>", lambda e: self._open_help())
         self.root.bind("<F2>", lambda e: self._open_command_search())
@@ -283,19 +309,94 @@ class MainWindow:
         )
 
         if success:
+            sb = int(stopbits) if float(stopbits).is_integer() else stopbits
             pi = f"{port} {baudrate},{databits}" \
-                 f"{'N' if parity == 'None' else parity[0]}{int(stopbits)}"
+                 f"{'N' if parity == 'None' else parity[0]}{sb}"
             self.status_bar.set_connected(pi)
             self.toolbar.set_connected(True)
             self.terminal.append(f"--- Connected to {pi} ---\n", tag="system")
             self.monitor.append(f"--- Connected to {pi} ---\n", tag="info")
             # Switch to Connection tab
             self._notebook.select(0)
+            self._pending_cr = False
+            if self.config.get("tnc", "auto_init", default=True):
+                self._start_tnc_init()
         else:
             messagebox.showerror("Connection Error", msg, parent=self.root)
 
+    # -- TNC handshake / init --
+
+    def _ui(self, fn, *args):
+        """
+        Schedules fn(*args) in the Tk thread (safe to call from any thread).
+
+        Args:
+            fn: callable - function to run in the GUI thread
+            *args: arguments for fn
+        """
+        self._ui_queue.put((fn, args))
+
+    def _start_tnc_init(self):
+        """Starts the TNC handshake + init commands in a background thread."""
+        if not self.serial.is_connected:
+            self.terminal.append("--- Not connected ---\n", tag="error")
+            return
+        if self._initializer and self._initializer.is_running():
+            self.terminal.append("[init] Already running\n", tag="system")
+            return
+        if self._yapp and self._yapp.is_active():
+            return
+        model = self.config.get("tnc", "model", default="Generic / TNC-2 Compatible")
+        target = {
+            "baudrate": int(self.config.get("serial", "baudrate", default=9600)),
+            "databits": int(self.config.get("serial", "databits", default=8)),
+            "parity": self.config.get("serial", "parity", default="None"),
+            "stopbits": float(self.config.get("serial", "stopbits", default=1)),
+        }
+        self._initializer = TncInitializer(
+            self.serial, model, target,
+            init_commands=get_init_commands(self.config, model),
+            callsign=self.config.get("station", "callsign", default=""),
+            do_handshake=self.config.get("tnc", "handshake", default=True),
+            on_status=lambda m, lvl: self._ui(self._init_status, m, lvl),
+            on_done=lambda ok: self._ui(self._init_done, ok),
+        )
+        self.terminal.append(f"[init] {model}\n", tag="system")
+        self._initializer.start()
+
+    def _init_status(self, message, level):
+        """
+        Shows an initializer progress message (GUI thread).
+
+        Args:
+            message: str - text
+            level: str - "info", "ok", "warn", "error"
+        """
+        tag = "error" if level in ("warn", "error") else "system"
+        self.terminal.append(f"[init] {message}\n", tag=tag)
+
+    def _init_done(self, success):
+        """
+        Called when the initializer ends (GUI thread).
+
+        Args:
+            success: bool - True if the TNC was found and configured
+        """
+        self._initializer = None
+        if success:
+            self.terminal.append("[init] TNC ready\n", tag="system")
+
+    def _stop_tnc_init(self):
+        """Stops a running initializer, if any."""
+        if self._initializer:
+            self._initializer.stop()
+            self._initializer = None
+
     def _disconnect(self):
         """Disconnects from the serial port."""
+        self._stop_tnc_init()
+        if self._yapp and self._yapp.is_active():
+            self._yapp.abort("Disconnected")
         if self.serial.is_connected:
             self.serial.disconnect()
             self.status_bar.set_disconnected()
@@ -305,59 +406,129 @@ class MainWindow:
 
     # -- Data handling --
 
-    def _on_send(self, text):
+    def _eol(self):
+        """
+        Returns: str - line terminator configured for Enter ("\r", "\n", "\r\n" or "")
+        """
+        return self.EOL_BYTES.get(
+            self.config.get("serial", "line_ending", default="CR"), "\r")
+
+    def _on_send(self, text, already_sent=False):
         """
         Called when user presses Enter in the terminal.
-        Sends text to TNC and displays it.
+        Sends the line (line mode) or only the terminator (character mode).
 
         Args:
-            text: str - the command text to send
+            text: str - the line typed by the user
+            already_sent: bool - True if the characters were sent while typing
         """
         if not self.serial.is_connected:
             self.terminal.append("--- Not connected ---\n", tag="error")
             return
-
-        # Send with CR
-        self.serial.send(text + "\r")
-        # Display sent text
+        if already_sent:
+            self.serial.send(self._eol())
+        else:
+            self.serial.send(text + self._eol())
         self.terminal.append_tx(text)
+
+    def _on_raw(self, data):
+        """
+        Sends raw bytes immediately (control keys, character mode).
+        Control characters are shown in the RX area as [^X].
+
+        Args:
+            data: bytes - bytes to send
+        """
+        if not self.serial.is_connected:
+            self.terminal.append("--- Not connected ---\n", tag="error")
+            return
+        self.serial.send_bytes(data)
+        if len(data) == 1 and data[0] < 0x20 and data[0] not in (0x08, 0x0D, 0x0A):
+            name = "ESC" if data[0] == 0x1B else "^" + chr(data[0] + 0x40)
+            self.terminal.append(f"[{name}]\n", tag="system")
 
     def _start_polling(self):
         """Starts periodic serial and stats polling."""
         self._poll_serial()
         self._poll_stats()
 
+    # Control characters removed from displayed text (all except TAB and LF)
+    _DISPLAY_STRIP = {c: None for c in range(32) if c not in (9, 10)}
+    _DISPLAY_STRIP[127] = None
+
+    def _normalize_rx(self, text):
+        """
+        Converts CR, LF and CR+LF to "\n" (even if split across chunks) and
+        removes other control characters for display.
+
+        Args:
+            text: str - received text (latin-1 decoded)
+
+        Returns: str - text ready to display
+        """
+        if self._pending_cr and text.startswith("\n"):
+            text = text[1:]
+        self._pending_cr = text.endswith("\r")
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+        return text.translate(self._DISPLAY_STRIP)
+
     def _poll_serial(self):
-        """Reads from serial queue, displays in terminal and monitor.
-        Routes data to YAPP handler when a transfer is active."""
+        """Runs posted UI work, reads the serial queue and displays data.
+        Routes data to the YAPP handler when a transfer is active.
+        Consecutive chunks are joined to minimize Text widget updates."""
+        # Work posted from other threads
+        try:
+            while True:
+                fn, args = self._ui_queue.get_nowait()
+                try:
+                    fn(*args)
+                except Exception as e:
+                    self.terminal.append(f"[internal error] {e}\n", tag="error")
+        except queue.Empty:
+            pass
+
+        pending = bytearray()
         try:
             while True:
                 msg_type, data = self.serial.rx_queue.get_nowait()
 
                 if msg_type == "__DISCONNECTED__":
+                    self._flush_rx(pending)
+                    pending = bytearray()
+                    self._stop_tnc_init()
                     self.status_bar.set_disconnected()
                     self.toolbar.set_connected(False)
                     self.terminal.append("--- Connection lost ---\n", tag="error")
                     self.monitor.append("--- Connection lost ---\n", tag="error")
-                    # Cancel active YAPP transfer on disconnect
                     if self._yapp and self._yapp.is_active():
-                        self._yapp.cancel()
+                        self._yapp.abort("Serial connection lost")
                     continue
 
                 if msg_type == "data" and data:
-                    # Route to YAPP handler if transfer active
                     if self._yapp and self._yapp.is_active():
+                        self._flush_rx(pending)
+                        pending = bytearray()
                         self._yapp.process_data(data)
-                        continue
-
-                    text = data.decode("latin-1", errors="replace")
-                    # Show in terminal (connection tab)
-                    self.terminal.append(text, tag="rx")
-                    # Show in monitor (with auto frame classification)
-                    self.monitor.append(text)
+                    else:
+                        pending.extend(data)
         except queue.Empty:
             pass
+        self._flush_rx(pending)
         self.root.after(self.POLL_INTERVAL_MS, self._poll_serial)
+
+    def _flush_rx(self, data):
+        """
+        Displays accumulated RX bytes in the terminal and the monitor.
+
+        Args:
+            data: bytes/bytearray - received bytes (may be empty)
+        """
+        if not data:
+            return
+        text = self._normalize_rx(bytes(data).decode("latin-1", errors="replace"))
+        if text:
+            self.terminal.append(text, tag="rx")
+            self.monitor.append(text)
 
     def _poll_stats(self):
         """Updates TX/RX counters in status bar."""
@@ -380,59 +551,139 @@ class MainWindow:
         """Clears the monitor panel."""
         self.monitor.clear()
 
-    # -- YAPP (placeholder) --
+    # -- YAPP --
+
+    def _yapp_can_start(self):
+        """
+        Checks that a YAPP transfer can be started.
+
+        Returns: bool - True if connected, idle and no init running
+        """
+        if not self.serial.is_connected:
+            messagebox.showwarning("YAPP", "Not connected to serial port.",
+                                   parent=self.root)
+            return False
+        if (self._yapp and self._yapp.is_active()) or self._yapp_trans:
+            messagebox.showwarning("YAPP", "A transfer is already in progress.",
+                                   parent=self.root)
+            return False
+        if self._initializer and self._initializer.is_running():
+            messagebox.showwarning("YAPP", "TNC initialization in progress.",
+                                   parent=self.root)
+            return False
+        return True
+
+    def _yapp_create(self, mode, filename=""):
+        """
+        Creates the YAPP handler (callbacks marshalled to the GUI thread) and dialog.
+
+        Args:
+            mode: str - "send" or "receive"
+            filename: str - file name shown in the dialog
+        """
+        self._yapp = YappHandler(
+            send_raw=self.serial.send_bytes,
+            on_progress=lambda t, n: self._ui(self._yapp_on_progress, t, n),
+            on_event=lambda ev, m: self._ui(self._yapp_on_event, ev, m),
+            on_finished=lambda ok, m: self._ui(self._yapp_on_finished, ok, m),
+            block_delay_ms=self.config.get("yapp", "block_delay_ms", default=0),
+        )
+        self._yapp_dialog = YappTransferDialog(
+            self.root, mode=mode, filename=filename, on_cancel=self._yapp_cancel)
+        if self.config.get("serial", "flow_control", default="None") != "RTS/CTS":
+            self._yapp_dialog.log_event(
+                YappEvent.INFO, "Warning: no RTS/CTS flow control. If blocks are lost, "
+                                "enable RTS/CTS or set a block delay.")
+
+    def _yapp_begin(self, start_fn, start_first=False):
+        """
+        Puts the TNC in transparent mode (if enabled) and calls start_fn in the
+        GUI thread, before (receive) or after (send) switching the TNC.
+
+        Args:
+            start_fn: callable() -> tuple(bool, str) - starts the YAPP handler
+            start_first: bool - True to start the handler before entering
+                         transparent mode (receiver must not miss the first SI)
+        """
+        def start():
+            if not self._yapp:
+                return
+            ok, msg = start_fn()
+            if not ok:
+                self._yapp_dialog.log_event(YappEvent.ERROR, msg)
+                self._yapp_dialog.transfer_finished(False, msg)
+                self._yapp = None
+                self._yapp_leave_transparent()
+
+        if not self.config.get("yapp", "transparent", default=True):
+            start()
+            return
+
+        trans_cmd = self.config.get("yapp", "trans_cmd", default="TRANS")
+        if start_first:
+            start()
+            if not self._yapp:
+                return
+        self._yapp_trans = True
+        self._yapp_dialog.log_event(YappEvent.INFO,
+                                    f"Switching TNC to transparent mode ({trans_cmd})")
+
+        def worker():
+            self.serial.send_bytes(b"\x03")      # to command mode
+            time.sleep(0.5)
+            self.serial.send(trans_cmd + "\r")
+            if not start_first:
+                time.sleep(0.8)
+                self._ui(start)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _yapp_leave_transparent(self):
+        """
+        Leaves transparent mode: guard time, 3 x Ctrl-C, guard time, then the
+        configured return command (e.g. "K" for converse). Runs in a thread.
+        """
+        if not self._yapp_trans:
+            return
+        ret_cmd = self.config.get("yapp", "return_cmd", default="K")
+        guard = self.TRANS_GUARD_S
+
+        def worker():
+            time.sleep(guard)
+            for _ in range(3):
+                self.serial.send_bytes(b"\x03")
+                time.sleep(0.2)
+            time.sleep(guard)
+            if ret_cmd:
+                self.serial.send(ret_cmd + "\r")
+            self._ui(self._yapp_trans_done)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _yapp_trans_done(self):
+        """Marks the TNC as back from transparent mode (GUI thread)."""
+        self._yapp_trans = False
+        self.terminal.append("[YAPP] TNC back from transparent mode\n", tag="system")
 
     def _yapp_send(self):
         """YAPP file send - opens file picker and starts transfer."""
-        if not self.serial.is_connected:
-            messagebox.showwarning("YAPP", "Not connected to serial port.",
-                                   parent=self.root)
+        if not self._yapp_can_start():
             return
-        if self._yapp and self._yapp.is_active():
-            messagebox.showwarning("YAPP", "A transfer is already in progress.",
-                                   parent=self.root)
-            return
-
         from tkinter import filedialog
         filepath = filedialog.askopenfilename(
-            parent=self.root, title="Select file to send via YAPP")
+            parent=self.root, title="Select file to send via YAPP",
+            initialdir=self.config.get("paths", "yapp_upload", default="") or None)
         if not filepath:
             return
-
-        # Create YAPP handler
-        self._yapp = YappHandler(
-            send_raw=self.serial.send_bytes,
-            on_progress=self._yapp_on_progress,
-            on_event=self._yapp_on_event,
-            on_finished=self._yapp_on_finished,
-        )
-
-        # Create dialog
         filename = os.path.basename(filepath)
-        file_size = os.path.getsize(filepath)
-        self._yapp_dialog = YappTransferDialog(
-            self.root, mode="send", filename=filename,
-            on_cancel=self._yapp_cancel)
-        self._yapp_dialog.update_file_info(filename, file_size)
-
-        # Start transfer
-        ok, msg = self._yapp.start_send(filepath)
-        if not ok:
-            self._yapp_dialog.log_event(YappEvent.ERROR, msg)
-            self._yapp_dialog.transfer_finished(False, msg)
-            self._yapp = None
+        self._yapp_create("send", filename)
+        self._yapp_dialog.update_file_info(filename, os.path.getsize(filepath))
+        self._yapp_begin(lambda: self._yapp.start_send(filepath))
 
     def _yapp_receive(self):
         """YAPP file receive - starts listening for incoming file."""
-        if not self.serial.is_connected:
-            messagebox.showwarning("YAPP", "Not connected to serial port.",
-                                   parent=self.root)
+        if not self._yapp_can_start():
             return
-        if self._yapp and self._yapp.is_active():
-            messagebox.showwarning("YAPP", "A transfer is already in progress.",
-                                   parent=self.root)
-            return
-
         download_dir = self.config.get("paths", "yapp_download", default="")
         if not download_dir:
             from tkinter import filedialog
@@ -442,72 +693,60 @@ class MainWindow:
                 return
             self.config.set("paths", "yapp_download", download_dir)
             self.config.save()
-
-        # Create YAPP handler
-        self._yapp = YappHandler(
-            send_raw=self.serial.send_bytes,
-            on_progress=self._yapp_on_progress,
-            on_event=self._yapp_on_event,
-            on_finished=self._yapp_on_finished,
-        )
-
-        # Create dialog
-        self._yapp_dialog = YappTransferDialog(
-            self.root, mode="receive", filename="",
-            on_cancel=self._yapp_cancel)
-
-        # Start receive
-        ok, msg = self._yapp.start_receive(download_dir)
-        if not ok:
-            self._yapp_dialog.log_event(YappEvent.ERROR, msg)
-            self._yapp_dialog.transfer_finished(False, msg)
-            self._yapp = None
+        self._yapp_create("receive")
+        self._yapp_begin(lambda: self._yapp.start_receive(download_dir), start_first=True)
 
     def _yapp_on_progress(self, transferred, total):
         """
-        Callback de progreso YAPP. Se ejecuta en thread del serial handler,
-        así que programamos actualización en el hilo GUI.
+        Progreso YAPP (hilo GUI).
 
         Args:
             transferred: int - bytes transferidos
             total: int - total bytes
         """
         if self._yapp_dialog:
-            self.root.after(0, self._yapp_dialog.update_progress, transferred, total)
-            # Actualizar info del archivo si es recepción y acabamos de saber el nombre
             if self._yapp and self._yapp.filename:
-                self.root.after(0, self._yapp_dialog.update_file_info,
-                                self._yapp.filename, self._yapp.file_size)
+                self._yapp_dialog.update_file_info(self._yapp.filename,
+                                                   self._yapp.file_size)
+            self._yapp_dialog.update_progress(transferred, total)
 
     def _yapp_on_event(self, event_type, message):
         """
-        Callback de evento de control YAPP.
+        Evento de control YAPP (hilo GUI).
 
         Args:
             event_type: YappEvent - tipo de evento
             message: str - mensaje descriptivo
         """
         if self._yapp_dialog:
-            self.root.after(0, self._yapp_dialog.log_event, event_type, message)
+            self._yapp_dialog.log_event(event_type, message)
 
     def _yapp_on_finished(self, success, message):
         """
-        Callback de fin de transferencia YAPP.
+        Fin de transferencia YAPP (hilo GUI). Devuelve la TNC al modo comando.
 
         Args:
             success: bool - si fue exitosa
             message: str - mensaje final
         """
         if self._yapp_dialog:
-            self.root.after(0, self._yapp_dialog.transfer_finished, success, message)
+            self._yapp_dialog.transfer_finished(success, message)
         if self._yapp:
             self._yapp.reset_to_idle()
             self._yapp = None
+        if self.serial.is_connected:
+            self._yapp_leave_transparent()
+        else:
+            self._yapp_trans = False
 
     def _yapp_cancel(self):
         """Cancela la transferencia YAPP activa."""
         if self._yapp and self._yapp.is_active():
             self._yapp.cancel()
+        elif self._yapp:
+            # Cancelled while entering transparent mode
+            self._yapp = None
+            self._yapp_leave_transparent()
 
     def _yapp_set_download_dir(self):
         """Opens directory picker for YAPP download folder."""
@@ -533,6 +772,7 @@ class MainWindow:
             theme.apply_theme(self.root)
         self._refresh_all_colors()
         self._sync_tnc_model()
+        self.terminal.set_send_mode(self.config.get("serial", "send_mode", default="line"))
 
     def _sync_tnc_model(self):
         """Updates TNC model, autocomplete setting on terminal tab and status bar."""
@@ -551,6 +791,7 @@ class MainWindow:
         callsign = self.config.get("station", "callsign", default="")
         self.status_bar.set_callsign(callsign)
         self._sync_tnc_model()
+        self.terminal.set_send_mode(self.config.get("serial", "send_mode", default="line"))
 
     def _open_about(self):
         AboutDialog(self.root)
@@ -697,6 +938,9 @@ class MainWindow:
             self.config.save()
         except Exception:
             pass
+        self._stop_tnc_init()
+        if self._yapp and self._yapp.is_active():
+            self._yapp.cancel()
         if self.serial.is_connected:
             self.serial.disconnect()
         self.root.destroy()

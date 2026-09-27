@@ -7,6 +7,8 @@ search and lookup functions.
 import os
 import json
 
+from core.paths import resource_path
+
 # Maps TNC model name (as used in settings) to JSON filename (without extension)
 MODEL_FILE_MAP = {
     "Generic / TNC-2 Compatible": "generic_tnc2",
@@ -32,8 +34,7 @@ def _get_commands_dir():
     """
     Returns: str - absolute path to resources/tnc_commands/ directory
     """
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base, "resources", "tnc_commands")
+    return resource_path("tnc_commands") or ""
 
 
 def load_commands(model_name):

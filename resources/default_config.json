@@ -10,7 +10,9 @@
         "databits": 8,
         "stopbits": 1,
         "parity": "None",
-        "flow_control": "None"
+        "flow_control": "None",
+        "send_mode": "line",
+        "line_ending": "CR"
     },
     "appearance": {
         "font_family": "Consolas",
@@ -47,5 +49,17 @@
         "height": 700,
         "x": -1,
         "y": -1
+    },
+    "tnc": {
+        "model": "Generic / TNC-2 Compatible",
+        "autocomplete": true,
+        "auto_init": true,
+        "handshake": true
+    },
+    "yapp": {
+        "transparent": true,
+        "trans_cmd": "TRANS",
+        "return_cmd": "K",
+        "block_delay_ms": 0
     }
 }

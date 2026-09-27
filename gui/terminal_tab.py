@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 import tkinter.ttk as ttk
 from gui import theme
@@ -15,13 +16,25 @@ class TerminalTab(ttk.Frame):
     Args:
         parent: tk widget - parent container
         config: Config - application configuration instance
-        on_send: callable(str) or None - called with text when Enter is pressed
+        on_send: callable(str, bool) or None - called on Enter with (line text,
+                 already_sent). already_sent is True in character mode, where the
+                 characters were transmitted while typing and only the end-of-line
+                 must be sent.
+        on_execute: callable(dict) or None - called for key/sequence commands
+        on_raw: callable(bytes) or None - sends raw bytes immediately (control keys,
+                characters in character mode)
     """
 
-    def __init__(self, parent, config, on_send=None, on_execute=None):
+    def __init__(self, parent, config, on_send=None, on_execute=None, on_raw=None):
         super().__init__(parent, style="TFrame")
         self._config = config
         self._on_send = on_send
+        # on_raw: callable(bytes) or None - immediate raw transmission
+        self._on_raw = on_raw
+        # _send_mode: str - "line" (send on Enter) or "char" (send as typed)
+        self._send_mode = config.get("serial", "send_mode", default="line")
+        # _ac_pref: bool - user preference for autocomplete (only active in line mode)
+        self._ac_pref = config.get("tnc", "autocomplete", default=True)
         # on_execute: callable(dict) or None - called for key/sequence commands
         self._on_execute = on_execute
         # _tnc_model: str - current TNC model name for context menu
@@ -43,8 +56,7 @@ class TerminalTab(ttk.Frame):
             on_insert=self.insert_command
         )
         # Apply saved preference
-        ac_enabled = config.get("tnc", "autocomplete", default=True)
-        self._autocomplete.enabled = ac_enabled
+        self._apply_autocomplete()
 
     def _get_colors(self):
         """
@@ -180,6 +192,7 @@ class TerminalTab(ttk.Frame):
         self._tx_text.bind("<Down>", self._handle_down)
         self._tx_text.bind("<BackSpace>", self._handle_backspace)
         self._tx_text.bind("<Key>", self._handle_key)
+        self._tx_text.bind("<<Paste>>", self._handle_paste)
         self._tx_text.bind("<ButtonRelease-1>", self._handle_click)
         # Right-click context menu (Button-3 on Linux/Windows, Button-2 on Mac)
         self._tx_text.bind("<Button-3>", self._show_context_menu)
@@ -206,6 +219,7 @@ class TerminalTab(ttk.Frame):
         """
         # Get text from input_mark to end
         input_text = self._tx_text.get(self._input_mark, "end-1c")
+        char_mode = self._send_mode == "char"
 
         if input_text.strip():
             self._history.append(input_text)
@@ -227,9 +241,9 @@ class TerminalTab(ttk.Frame):
         self._tx_text.mark_set(self._input_mark, "end-1c")
         self._tx_text.see(tk.END)
 
-        # Send to TNC
-        if self._on_send and input_text:
-            self._on_send(input_text)
+        # Send to TNC (an empty line still sends the end-of-line, e.g. to get "cmd:")
+        if self._on_send:
+            self._on_send(input_text, char_mode)
 
         return "break"
 
@@ -244,6 +258,71 @@ class TerminalTab(ttk.Frame):
         """
         if self._tx_text.compare("insert", "<=", self._input_mark):
             return "break"
+        if self._send_mode == "char":
+            # Only the last typed character can be un-sent: force cursor to the end
+            if self._tx_text.tag_ranges("sel"):
+                self._tx_text.tag_remove("sel", "1.0", tk.END)
+            self._tx_text.mark_set("insert", "end-1c")
+            self._send_raw(b"\x08")
+        return None
+
+    def _send_raw(self, data):
+        """
+        Sends raw bytes through the on_raw callback.
+
+        Args:
+            data: bytes - bytes to send
+        """
+        if self._on_raw:
+            self._on_raw(data)
+
+    def _handle_ctrl_key(self, event):
+        """
+        Handles Ctrl+letter: sends the ASCII control character to the TNC
+        (Ctrl+C = 0x03, Ctrl+Z = 0x1A...). Exceptions kept for editing:
+        Ctrl+V (paste) and Ctrl+C / Ctrl+X while text is selected (copy / cut).
+        Ctrl+Shift+letter is left for application shortcuts.
+
+        Args:
+            event: tk.Event
+
+        Returns: str "break" if the key was sent, None otherwise
+        """
+        if event.state & 0x1:  # Shift held -> application shortcut
+            return None
+        key = event.keysym.lower()
+        if len(key) != 1 or not ("a" <= key <= "z"):
+            if key == "bracketleft":  # Ctrl+[ = ESC
+                self._send_raw(b"\x1b")
+                return "break"
+            return None
+        if key == "v":
+            return None
+        if key in ("c", "x") and self._tx_text.tag_ranges("sel"):
+            return None
+        self._send_raw(bytes([ord(key) - ord("a") + 1]))
+        return "break"
+
+    def _handle_paste(self, event):
+        """
+        In character mode, pasted text is also transmitted immediately.
+
+        Args:
+            event: tk.Event
+
+        Returns: None (lets the default paste insert the text)
+        """
+        if self._send_mode != "char":
+            return None
+        try:
+            text = self._tx_text.clipboard_get()
+        except tk.TclError:
+            return None
+        if self._tx_text.compare("insert", "<", self._input_mark):
+            self._tx_text.mark_set("insert", "end")
+        if text:
+            self._send_raw(text.replace("\r\n", "\n").replace("\n", "\r")
+                           .encode("latin-1", errors="replace"))
         return None
 
     def _handle_key(self, event):
@@ -262,12 +341,21 @@ class TerminalTab(ttk.Frame):
                             "Alt_L", "Alt_R", "Caps_Lock", "Tab",
                             "Prior", "Next"):
             return None
-        if event.state & 0x4:  # Control key held (Ctrl+C, Ctrl+V, etc.)
-            return None
+        if event.state & 0x4:  # Control key held
+            return self._handle_ctrl_key(event)
 
         # If cursor is in the history area, move to end
         if self._tx_text.compare("insert", "<", self._input_mark):
             self._tx_text.mark_set("insert", "end")
+
+        # Character mode: transmit each printable character as it is typed
+        if self._send_mode == "char" and event.char and len(event.char) == 1 \
+                and ord(event.char) >= 32 and event.keysym not in ("Return", "KP_Enter"):
+            if self._tx_text.tag_ranges("sel"):
+                self._tx_text.tag_remove("sel", "1.0", tk.END)
+            # Characters are sent in order, so typing always goes at the end
+            self._tx_text.mark_set("insert", "end-1c")
+            self._send_raw(event.char.encode("latin-1", errors="replace"))
         return None
 
     def _handle_click(self, event):
@@ -291,7 +379,7 @@ class TerminalTab(ttk.Frame):
 
         Returns: str "break"
         """
-        if not self._history:
+        if not self._history or self._send_mode == "char":
             return "break"
         if self._history_idx == -1:
             self._current_input = self._tx_text.get(self._input_mark, "end-1c")
@@ -313,7 +401,7 @@ class TerminalTab(ttk.Frame):
 
         Returns: str "break"
         """
-        if self._history_idx == -1:
+        if self._history_idx == -1 or self._send_mode == "char":
             return "break"
         if self._history_idx < len(self._history) - 1:
             self._history_idx += 1
@@ -364,7 +452,12 @@ class TerminalTab(ttk.Frame):
         Args:
             text: str - the command that was sent
         """
-        self.append(f"=> {text}\n", tag="tx")
+        last = self._rx_text.get("end-2c", "end-1c")
+        if last and last != "\n":
+            # Right after a prompt such as "cmd:" -> show it on the same line
+            self.append(f"{text}\n", tag="tx")
+        else:
+            self.append(f"=> {text}\n", tag="tx")
 
     def clear(self):
         """Clears the RX zone."""
@@ -430,7 +523,25 @@ class TerminalTab(ttk.Frame):
         Args:
             enabled: bool
         """
-        self._autocomplete.enabled = enabled
+        self._ac_pref = enabled
+        self._apply_autocomplete()
+
+    def _apply_autocomplete(self):
+        """Autocomplete is only active when the preference is on and in line mode."""
+        self._autocomplete.enabled = self._ac_pref and self._send_mode == "line"
+
+    def set_send_mode(self, mode):
+        """
+        Sets how typed text is transmitted.
+
+        Args:
+            mode: str - "line" (on Enter) or "char" (each key as typed)
+        """
+        self._send_mode = "char" if mode == "char" else "line"
+        self._apply_autocomplete()
+        label = "  ▲  TX  (character mode: keys sent as typed)" \
+            if self._send_mode == "char" else "  ▲  TX  (Enter to send)"
+        self._tx_label.config(text=label)
 
     def _show_context_menu(self, event):
         """
@@ -539,8 +650,15 @@ class TerminalTab(ttk.Frame):
         Args:
             text: str - command syntax to insert (e.g., "PACLEN {n}")
         """
-        self._tx_text.delete(self._input_mark, "end-1c")
-        self._tx_text.insert(self._input_mark, text)
+        if self._send_mode == "char":
+            # Characters already typed were transmitted: append and send the command
+            # word only (placeholders like {n} are for the user to type)
+            text = re.split(r"[{$\[<]", text, maxsplit=1)[0]
+            self._tx_text.insert("end-1c", text)
+            self._send_raw(text.encode("latin-1", errors="replace"))
+        else:
+            self._tx_text.delete(self._input_mark, "end-1c")
+            self._tx_text.insert(self._input_mark, text)
         self._tx_text.mark_set("insert", "end")
         self._tx_text.see(tk.END)
         self._tx_text.focus_set()

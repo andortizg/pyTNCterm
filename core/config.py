@@ -2,6 +2,43 @@ import json
 import os
 import copy
 
+from core.paths import resource_path
+
+# Built-in defaults, used if resources/default_config.json cannot be found
+BUILTIN_DEFAULTS = {   'station': {'callsign': '', 'grid_locator': '', 'name': ''},
+    'serial': {   'port': '',
+                  'baudrate': 9600,
+                  'databits': 8,
+                  'stopbits': 1,
+                  'parity': 'None',
+                  'flow_control': 'None',
+                  'send_mode': 'line',
+                  'line_ending': 'CR'},
+    'appearance': {   'font_family': 'Consolas',
+                      'font_size': 11,
+                      'monitor': {   'bg_color': '#0a1929',
+                                     'text_color': '#4fc3f7',
+                                     'info_color': '#ffd54f',
+                                     'error_color': '#ef5350'},
+                      'channel': {   'bg_color': '#0d1b2a',
+                                     'rx_color': '#e0e0e0',
+                                     'tx_color': '#00e676',
+                                     'system_color': '#ffd54f'},
+                      'input': {   'bg_color': '#1a1a2e',
+                                   'text_color': '#00e676',
+                                   'prompt_color': '#4fc3f7'},
+                      'statusbar': {'bg_color': '#1b2838', 'text_color': '#b0bec5'}},
+    'paths': {'yapp_download': '', 'yapp_upload': '', 'log_directory': ''},
+    'window': {'width': 900, 'height': 700, 'x': -1, 'y': -1},
+    'tnc': {   'model': 'Generic / TNC-2 Compatible',
+               'autocomplete': True,
+               'auto_init': True,
+               'handshake': True},
+    'yapp': {   'transparent': True,
+                'trans_cmd': 'TRANS',
+                'return_cmd': 'K',
+                'block_delay_ms': 0}}
+
 
 class Config:
     """
@@ -11,9 +48,6 @@ class Config:
     Config is stored as a nested dict and persisted to a JSON file.
     """
 
-    DEFAULT_CONFIG_PATH = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "resources", "default_config.json"
-    )
     USER_CONFIG_FILENAME = "pytncterm_config.json"
 
     def __init__(self):
@@ -36,12 +70,18 @@ class Config:
         """
         Loads configuration: first defaults, then overrides with user config if it exists.
         """
-        with open(self.DEFAULT_CONFIG_PATH, "r") as f:
-            self._data = json.load(f)
+        self._data = copy.deepcopy(BUILTIN_DEFAULTS)
+        default_path = resource_path("default_config.json")
+        if default_path and os.path.exists(default_path):
+            try:
+                with open(default_path, "r", encoding="utf-8") as f:
+                    self._deep_merge(self._data, json.load(f))
+            except (json.JSONDecodeError, IOError):
+                pass
 
         if os.path.exists(self._user_config_path):
             try:
-                with open(self._user_config_path, "r") as f:
+                with open(self._user_config_path, "r", encoding="utf-8") as f:
                     user_data = json.load(f)
                 self._deep_merge(self._data, user_data)
             except (json.JSONDecodeError, IOError):
@@ -65,8 +105,10 @@ class Config:
         """
         Persists current configuration to the user config file.
         """
-        with open(self._user_config_path, "w") as f:
+        tmp_path = self._user_config_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(self._data, f, indent=4)
+        os.replace(tmp_path, self._user_config_path)
 
     def get(self, *keys, default=None):
         """

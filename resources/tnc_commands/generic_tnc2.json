@@ -1,0 +1,618 @@
+{
+  "model": "Generic TNC-2 / TAPR TNC-2 Compatible",
+  "firmware_notes": "Basado en TAPR TNC-2 firmware original (1985). Firmware estándar 1.1.8 y 1.1.9. Compatible con clones: MFJ-1270B/1274, PacComm TINY-2/MICRO-2, Symek TNC-2H, AEA PK-88, Kantronics KPC-2/KPC-3, etc. Procesador: Z80 @ 4.9152 MHz. Memoria: 32K EPROM + 32K RAM.",
+  "categories": {
+    "Connection": [
+      {
+        "cmd": "CONNECT",
+        "type": "text",
+        "desc": "Connect to a station",
+        "syntax": "C {call}[-SSID] [VIA {digi1},{digi2},...,{digi8}]",
+        "help": "Initiates an AX.25 connection to the specified station.\n\nExamples:\n  C DG2GSV\n  C DB0UAL VIA DG2GSV\n  C DB0FHN VIA DB0UAL,DB0RBS\n  C W1AW-5\n\nThe TNC sends SABM frames and waits for UA. If no response after RETRY attempts, connection fails.\n\nUp to 8 digipeaters can be specified in the VIA path."
+      },
+      {
+        "cmd": "DISCONNECT",
+        "type": "text",
+        "desc": "Disconnect current session",
+        "syntax": "D",
+        "help": "Sends a DISC frame to end the current AX.25 connection gracefully.\n\nWaits for UA response before fully disconnecting."
+      },
+      {
+        "cmd": "CONVERSE",
+        "type": "text",
+        "desc": "Enter converse mode",
+        "syntax": "CONV|K",
+        "help": "Enters converse mode. Everything you type is packetized and transmitted.\n\nPress Ctrl+C three times (with 1 second before/after) to return to command mode.\n\nShort form: K"
+      },
+      {
+        "cmd": "TRANSPARENT",
+        "type": "text",
+        "desc": "Enter transparent mode",
+        "syntax": "TRANS",
+        "help": "Enters transparent mode for binary data transfer.\n\nAll data is passed without interpretation.\nUse three Ctrl+C characters (COMMAND) with timing to exit.\n\nUseful for file transfers and remote terminal access."
+      }
+    ],
+    "Monitoring": [
+      {
+        "cmd": "MONITOR",
+        "type": "text",
+        "desc": "Monitor on/off",
+        "syntax": "MON ON|OFF",
+        "help": "Enables or disables the display of packets on the radio channel.\n\nMON ON  – show monitored traffic\nMON OFF – only show data from connected station\n\nDefault: ON"
+      },
+      {
+        "cmd": "MALL",
+        "type": "text",
+        "desc": "Monitor all packets",
+        "syntax": "MALL ON|OFF",
+        "help": "When ON, monitors all packets regardless of destination.\n\nWhen OFF, only monitors packets to/from your station.\n\nDefault: ON"
+      },
+      {
+        "cmd": "MCON",
+        "type": "text",
+        "desc": "Monitor only connected",
+        "syntax": "MCON ON|OFF",
+        "help": "When ON, only shows packets from stations you're connected to.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MCOM",
+        "type": "text",
+        "desc": "Monitor while connected",
+        "syntax": "MCOM ON|OFF",
+        "help": "Controls whether monitored traffic is shown during active connections.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "MRPT",
+        "type": "text",
+        "desc": "Monitor repeated packets",
+        "syntax": "MRPT ON|OFF",
+        "help": "When ON, shows digipeated packets.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "HEADERLN",
+        "type": "text",
+        "desc": "Header on separate line",
+        "syntax": "HEADERLN ON|OFF",
+        "help": "When ON, displays packet header on separate line from data.\n\nWhen OFF, header and data on same line.\n\nDefault: ON"
+      },
+      {
+        "cmd": "MHEARD",
+        "type": "text",
+        "desc": "Show heard stations",
+        "syntax": "MH",
+        "help": "Displays a list of stations heard recently.\n\nShows callsign, packets heard, and last heard time."
+      },
+      {
+        "cmd": "SCREENLN",
+        "type": "text",
+        "desc": "Screen line length",
+        "syntax": "SCREENLN {n}",
+        "help": "Sets screen width for word wrap.\n\nValues: 0-255 (0 = disabled)\nDefault: 0\n\nWhen enabled, wraps text at specified column.",
+        "default": "0",
+        "range": "0-255"
+      }
+    ],
+    "Station Setup": [
+      {
+        "cmd": "MYCALL",
+        "type": "text",
+        "desc": "Set your callsign",
+        "syntax": "MY {callsign}[-SSID]",
+        "help": "Sets the callsign used for all transmissions.\n\nExamples:\n  MY EA7HQL\n  MY EA7HQL-5\n\nSSID (-0 to -15) can be appended. Default SSID is -0.\n\nYou MUST set this before connecting. TNC will prompt on first power-up."
+      },
+      {
+        "cmd": "MYALIAS",
+        "type": "text",
+        "desc": "Alternate digipeat callsign",
+        "syntax": "MYALIAS {callsign}[-SSID]",
+        "help": "Sets alternate identifier for digipeating.\n\nExample: MYALIAS MADRID\n\nStations can digipeat via MYCALL or MYALIAS.\nUseful for geographic or functional names.\n\nDefault: none"
+      },
+      {
+        "cmd": "ECHO",
+        "type": "text",
+        "desc": "Local echo on/off",
+        "syntax": "ECHO ON|OFF",
+        "help": "Controls whether the TNC echoes back characters you type.\n\nECHO ON  – TNC echoes input\nECHO OFF – no echo (use if terminal has local echo)\n\nDefault: ON"
+      },
+      {
+        "cmd": "AUTOLF",
+        "type": "text",
+        "desc": "Auto line feed",
+        "syntax": "AUTOLF ON|OFF",
+        "help": "Adds LF after each CR received from computer.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "FLOW",
+        "type": "text",
+        "desc": "Software flow control",
+        "syntax": "FLOW ON|OFF",
+        "help": "Enables XON/XOFF software flow control between TNC and terminal.\n\nUses START (Ctrl+Q) and STOP (Ctrl+S) characters.\n\nDefault: ON"
+      },
+      {
+        "cmd": "NEWMODE",
+        "type": "text",
+        "desc": "New mode notification",
+        "syntax": "NEWMODE ON|OFF",
+        "help": "When ON, displays message when entering/exiting modes.\n\nExample: *** CONNECTED to W1AW\n\nDefault: ON"
+      }
+    ],
+    "Packet Timing": [
+      {
+        "cmd": "TXDELAY",
+        "type": "text",
+        "desc": "TX keyup delay (10ms units)",
+        "syntax": "TXDELAY {n}",
+        "help": "Delay between keying TX and sending data.\n\nValues: 0-120 (10ms units)\nDefault: 30 (300ms)\n\nGuidelines:\n  Direct VHF: 20-30\n  Via repeater: 40-60\n  HF: 30-50",
+        "default": "30",
+        "range": "0-120"
+      },
+      {
+        "cmd": "FRACK",
+        "type": "text",
+        "desc": "Frame ack timeout (sec)",
+        "syntax": "FRACK {n}",
+        "help": "Seconds to wait for ACK before retransmitting.\n\nValues: 1-15\nDefault: 3\n\nGuidelines:\n  VHF direct: 3\n  Via digipeater: 5-7\n  HF: 8-15",
+        "default": "3",
+        "range": "1-15"
+      },
+      {
+        "cmd": "RETRY",
+        "type": "text",
+        "desc": "Max retries",
+        "syntax": "RETRY {n}",
+        "help": "Max retransmission attempts before disconnect.\n\nValues: 0-15\nDefault: 10",
+        "default": "10",
+        "range": "0-15"
+      },
+      {
+        "cmd": "PERSIST",
+        "type": "text",
+        "desc": "Persistence (0-255)",
+        "syntax": "PERSIST {n}",
+        "help": "CSMA persistence. Higher = more aggressive transmit.\n\nValues: 0-255\nDefault: 63\n\nProbability = (PERSIST + 1) / 256\n  63 = 25% (shared channels)\n  255 = always transmit (point-to-point)",
+        "default": "63",
+        "range": "0-255"
+      },
+      {
+        "cmd": "SLOTTIME",
+        "type": "text",
+        "desc": "Slot time (10ms units)",
+        "syntax": "SLOTTIME {n}",
+        "help": "Time interval between PERSIST checks.\n\nValues: 0-255 (10ms units)\nDefault: 10 (100ms)\n\nUsed with PERSIST for p-persistent CSMA.",
+        "default": "10",
+        "range": "0-255"
+      },
+      {
+        "cmd": "DWAIT",
+        "type": "text",
+        "desc": "Defer wait time",
+        "syntax": "DWAIT {n}",
+        "help": "Time slots to wait after DCD drops before transmitting.\n\nValues: 0-255\nDefault: 0\n\nEach slot = SLOTTIME duration.\nIncreases delay after carrier detect drops.",
+        "default": "0",
+        "range": "0-255"
+      },
+      {
+        "cmd": "RESPTIME",
+        "type": "text",
+        "desc": "Response time (100ms units)",
+        "syntax": "RESPTIME {n}",
+        "help": "Delay before responding to poll or connection.\n\nValues: 0-250 (100ms units)\nDefault: 0\n\nUseful for half-duplex systems.",
+        "default": "0",
+        "range": "0-250"
+      },
+      {
+        "cmd": "AXDELAY",
+        "type": "text",
+        "desc": "Repeater TX delay (10ms units)",
+        "syntax": "AXDELAY {n}",
+        "help": "Extra TXDELAY when transmitting through repeater.\n\nValues: 0-255 (10ms units)\nDefault: 0\n\nAdded to TXDELAY if no activity heard within AXHANG time.",
+        "default": "0",
+        "range": "0-255"
+      },
+      {
+        "cmd": "AXHANG",
+        "type": "text",
+        "desc": "Repeater hang time (10ms units)",
+        "syntax": "AXHANG {n}",
+        "help": "Repeater tail hang time.\n\nValues: 0-255 (10ms units)\nDefault: 0\n\nIf packet heard within this time, AXDELAY not added.",
+        "default": "0",
+        "range": "0-255"
+      }
+    ],
+    "Packet Advanced": [
+      {
+        "cmd": "PACLEN",
+        "type": "text",
+        "desc": "Max packet length (0-255)",
+        "syntax": "PACLEN {n}",
+        "help": "Maximum data bytes per AX.25 I-frame.\n\nValues: 0-255 (0 = 256)\nDefault: 128\n\nGuidelines:\n  HF (300 baud): 40-80\n  VHF (1200 baud): 128\n  VHF (9600 baud): 255\n\nSmaller = fewer retransmissions on noisy links.",
+        "default": "128",
+        "range": "0-255"
+      },
+      {
+        "cmd": "MAXFRAME",
+        "type": "text",
+        "desc": "Max outstanding I-frames (1-7)",
+        "syntax": "MAXFRAME {n}",
+        "help": "Max unacknowledged I-frames before waiting for ACK.\n\nValues: 1-7\nDefault: 4\n\nGuidelines:\n  HF: 1-2\n  VHF simplex: 3-4\n  VHF full-duplex: 7",
+        "default": "4",
+        "range": "1-7"
+      },
+      {
+        "cmd": "CHECK",
+        "type": "text",
+        "desc": "Inactivity timeout (10 sec units)",
+        "syntax": "CHECK {n}",
+        "help": "Time with no activity before sending link check.\n\nValues: 0-250 (10 sec units, 0=disabled)\nDefault: 30 (300 seconds = 5 minutes)\n\nWith AX25L2V2 ON: sends RR poll\nWith AX25L2V2 OFF: initiates disconnect\n\nPrevents hung connections.",
+        "default": "30",
+        "range": "0-250"
+      },
+      {
+        "cmd": "AX25L2V2",
+        "type": "text",
+        "desc": "AX.25 v2 protocol",
+        "syntax": "AX25L2V2 ON|OFF",
+        "help": "ON - use AX.25 v2.0 protocol (poll frames)\nOFF - use AX.25 v1.0 protocol\n\nv2.0 sends short poll frames instead of retransmitting full packets.\nReduces channel congestion.\n\nRecommended ON for VHF/UHF.\nSome suggest OFF for HF to reduce polling overhead.\n\nDefault: ON"
+      },
+      {
+        "cmd": "DIGIPEAT",
+        "type": "text",
+        "desc": "Digipeater on/off",
+        "syntax": "DIGIPEAT ON|OFF",
+        "help": "Enables the digipeater function.\n\nWhen ON, the TNC relays packets addressed via MYCALL or MYALIAS.\n\nDefault: ON (on TAPR TNC-2)"
+      },
+      {
+        "cmd": "PASSALL",
+        "type": "text",
+        "desc": "Pass packets with errors",
+        "syntax": "PASSALL ON|OFF",
+        "help": "When ON, passes packets even with CRC errors.\n\nUseful for monitoring weak signals.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "PPERSIST",
+        "type": "text",
+        "desc": "P-persistent CSMA mode",
+        "syntax": "PPERSIST ON|OFF",
+        "help": "ON - use PERSIST/SLOTTIME method\nOFF - use DWAIT method\n\nDefault: ON\n\nMost modern operations use ON."
+      }
+    ],
+    "Beacon & Unproto": [
+      {
+        "cmd": "BEACON",
+        "type": "text",
+        "desc": "Beacon interval",
+        "syntax": "BEACON EVERY {n}|AFTER {n}",
+        "help": "Sets beacon transmission:\n\nEVERY n - send beacon every n×10 seconds\nAFTER n - send once after n×10 sec of inactivity\n\nValues: 0-250 (0 = off)\nDefault: EVERY 0 (disabled)\n\nExamples:\n  BEACON EVERY 90 (every 15 minutes)\n  BEACON AFTER 180 (after 30 min inactivity)\n  BEACON EVERY 0 (disable)\n\nWARNING: Use beacons sparingly! Keep short and infrequent.\nMore than once per 10 minutes is excessive.",
+        "default": "EVERY 0"
+      },
+      {
+        "cmd": "BTEXT",
+        "type": "text",
+        "desc": "Beacon text",
+        "syntax": "BTEXT {text}",
+        "help": "Sets the text for beacon packets. Max 128 characters.\n\nExample: BTEXT EA7HQL VHF Packet - Madrid\n\nBeacon sent as UI frame to BEACON destination via UNPROTO path.\n\nDefault: empty"
+      },
+      {
+        "cmd": "UNPROTO",
+        "type": "text",
+        "desc": "Unproto destination & path",
+        "syntax": "UNPROTO {dest} [VIA {digi1},{digi2},...,{digi8}]",
+        "help": "Sets destination and digipeater path for UI frames (beacons, unconnected packets).\n\nExamples:\n  UNPROTO CQ\n  UNPROTO BEACON VIA WIDE2-2\n  UNPROTO APRS VIA RELAY,WIDE\n\nUp to 8 digipeaters can be specified.\n\nDefault: CQ"
+      },
+      {
+        "cmd": "ID",
+        "type": "text",
+        "desc": "Send ID packet now",
+        "syntax": "ID",
+        "help": "Immediately sends an identification packet.\n\nPacket contains MYCALL in UI frame to destination ID.\n\nUseful for sending final ID before shutdown."
+      },
+      {
+        "cmd": "HID",
+        "type": "text",
+        "desc": "Hourly ID beacon",
+        "syntax": "HID ON|OFF",
+        "help": "When ON, sends ID beacon every 9.5 minutes when digipeating.\n\nFirmware 1.1.9+: Also sends ID on connect, disconnect, and connect attempts.\n\nFormat: MYCALL>ID via UNPROTO\n\nDefault: OFF"
+      }
+    ],
+    "Connect Messages": [
+      {
+        "cmd": "CTEXT",
+        "type": "text",
+        "desc": "Connect text",
+        "syntax": "CTEXT {text}",
+        "help": "Message sent to station that connects to you.\n\nMax 128 characters.\n\nExample: CTEXT Welcome to EA7HQL - Madrid\n\nDefault: empty"
+      },
+      {
+        "cmd": "CMSG",
+        "type": "text",
+        "desc": "Connect message enable",
+        "syntax": "CMSG ON|OFF",
+        "help": "When ON, automatically sends CTEXT when someone connects.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "CONOK",
+        "type": "text",
+        "desc": "Connection acknowledgment",
+        "syntax": "CONOK ON|OFF",
+        "help": "When ON, displays '*** CONNECTED to {call}' message.\n\nDefault: ON"
+      },
+      {
+        "cmd": "CONMODE",
+        "type": "text",
+        "desc": "Mode after connection",
+        "syntax": "CONMODE CONVERSE|TRANS",
+        "help": "Mode to enter automatically after successful connection:\n\nCONVERSE - enter converse mode\nTRANS - enter transparent mode\n\nDefault: CONVERSE"
+      },
+      {
+        "cmd": "CONPERM",
+        "type": "text",
+        "desc": "Permanent converse mode",
+        "syntax": "CONPERM ON|OFF",
+        "help": "When ON, stays in converse mode even after disconnect.\n\nDefault: OFF"
+      }
+    ],
+    "Packet Timing Control": [
+      {
+        "cmd": "PACTIME",
+        "type": "text",
+        "desc": "Packet send timeout",
+        "syntax": "PACTIME AFTER {n}",
+        "help": "Send packet after n×100ms of inactivity from terminal.\n\nValues: 0-250 (100ms units)\nDefault: AFTER 10 (1 second)\n\nSends partial packet if no data for specified time.",
+        "default": "AFTER 10",
+        "range": "0-250"
+      },
+      {
+        "cmd": "CPACTIME",
+        "type": "text",
+        "desc": "PACTIME in converse",
+        "syntax": "CPACTIME ON|OFF",
+        "help": "When ON, PACTIME applies in converse mode.\nWhen OFF, PACTIME ignored in converse.\n\nDefault: ON"
+      },
+      {
+        "cmd": "SENDPAC",
+        "type": "text",
+        "desc": "Send packet character",
+        "syntax": "SENDPAC ${hex}",
+        "help": "Character that forces immediate packet transmission.\n\nFormat: $xx where xx is hex ASCII code\nDefault: $0D (CR)\n\nExamples:\n  SENDPAC $0D (carriage return)\n  SENDPAC $05 (Ctrl+E)\n\nSet to $00 to disable.",
+        "default": "$0D"
+      },
+      {
+        "cmd": "CR",
+        "type": "text",
+        "desc": "CR adds to packet",
+        "syntax": "CR ON|OFF",
+        "help": "When ON, CR character is added to outgoing data.\nWhen OFF, CR is stripped from outgoing data.\n\nDefault: ON"
+      }
+    ],
+    "Serial Port": [
+      {
+        "cmd": "AWLEN",
+        "type": "text",
+        "desc": "Word length (data bits)",
+        "syntax": "AWLEN {n}",
+        "help": "Sets data bits for serial port.\n\nValues: 7, 8\nDefault: 7\n\nNote: TAPR TNC-2 standard is 7E1 (7 data, Even parity, 1 stop)\nSet to 8 for 8N1 operation with 8BITCONV ON.",
+        "default": "7"
+      },
+      {
+        "cmd": "8BITCONV",
+        "type": "text",
+        "desc": "8-bit data conversion",
+        "syntax": "8BITCONV ON|OFF",
+        "help": "When ON, allows 8-bit characters (high bit set).\nWhen OFF, strips high bit (7-bit only).\n\nRequires AWLEN 8.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "XFLOW",
+        "type": "text",
+        "desc": "XON/XOFF flow control",
+        "syntax": "XFLOW ON|OFF",
+        "help": "Enables XON/XOFF software flow control.\n\nSame as FLOW command.\n\nDefault: ON"
+      },
+      {
+        "cmd": "TXFLOW",
+        "type": "text",
+        "desc": "TX flow control",
+        "syntax": "TXFLOW ON|OFF",
+        "help": "When ON, TNC honors flow control from computer.\nWhen OFF, ignores flow control.\n\nDefault: ON"
+      },
+      {
+        "cmd": "START",
+        "type": "text",
+        "desc": "XON character",
+        "syntax": "START ${hex}",
+        "help": "Sets the XON (resume) character for flow control.\n\nDefault: $11 (Ctrl+Q)\n\nFormat: $xx where xx is hex ASCII code.",
+        "default": "$11"
+      },
+      {
+        "cmd": "STOP",
+        "type": "text",
+        "desc": "XOFF character",
+        "syntax": "STOP ${hex}",
+        "help": "Sets the XOFF (pause) character for flow control.\n\nDefault: $13 (Ctrl+S)\n\nFormat: $xx where xx is hex ASCII code.",
+        "default": "$13"
+      }
+    ],
+    "Special Characters": [
+      {
+        "cmd": "CANLINE",
+        "type": "text",
+        "desc": "Cancel line character",
+        "syntax": "CANLINE ${hex}",
+        "help": "Character that cancels current input line.\n\nDefault: $18 (Ctrl+X)\n\nFormat: $xx where xx is hex ASCII code.\n\nClears entire line being entered.",
+        "default": "$18"
+      },
+      {
+        "cmd": "CANPAC",
+        "type": "text",
+        "desc": "Cancel packet character",
+        "syntax": "CANPAC ${hex}",
+        "help": "Character that toggles packet output on/off.\n\nDefault: $19 (Ctrl+Y)\n\nFormat: $xx where xx is hex ASCII code.\n\nSends TNC output to bit bucket when toggled on.",
+        "default": "$19"
+      },
+      {
+        "cmd": "DELETE",
+        "type": "text",
+        "desc": "Delete/backspace character",
+        "syntax": "DELETE ${hex}",
+        "help": "Character used to delete previous character.\n\nDefault: $08 (Ctrl+H / Backspace)\n\nFormat: $xx where xx is hex ASCII code.\n\nBehavior affected by BKONDEL setting.",
+        "default": "$08"
+      },
+      {
+        "cmd": "REDISPLA",
+        "type": "text",
+        "desc": "Redisplay line character",
+        "syntax": "REDISPLA ${hex}",
+        "help": "Character that redisplays current input line.\n\nDefault: $12 (Ctrl+R)\n\nFormat: $xx where xx is hex ASCII code.\n\nUseful after using DELETE to see clean line.",
+        "default": "$12"
+      },
+      {
+        "cmd": "COMMAND",
+        "type": "text",
+        "desc": "Command mode escape character",
+        "syntax": "COMMAND ${hex}",
+        "help": "Character sequence to exit transparent mode.\n\nDefault: $03 (Ctrl+C)\n\nFormat: $xx where xx is hex ASCII code.\n\nMust send three COMMAND chars with CMDTIME spacing.",
+        "default": "$03"
+      },
+      {
+        "cmd": "CMDTIME",
+        "type": "text",
+        "desc": "Command escape timing (sec)",
+        "syntax": "CMDTIME {n}",
+        "help": "Guard time for escaping transparent mode.\n\nValues: 0-255 seconds\nDefault: 1\n\nRequires silence for CMDTIME, then three COMMAND chars with <CMDTIME spacing, then CMDTIME silence.\n\n0 = can only exit via BREAK signal.",
+        "default": "1",
+        "range": "0-255"
+      },
+      {
+        "cmd": "BKONDEL",
+        "type": "text",
+        "desc": "Backspace on delete",
+        "syntax": "BKONDEL ON|OFF",
+        "help": "Controls DELETE character behavior:\n\nON - sends backspace (destructive)\nOFF - sends \\ character\n\nDefault: ON"
+      },
+      {
+        "cmd": "STREAMSW",
+        "type": "text",
+        "desc": "Stream switch character",
+        "syntax": "STREAMSW ${hex}",
+        "help": "Character to switch between connection streams (multi-connect TNCs).\n\nDefault: $00 (disabled on single-stream TNCs)\n\nFormat: $xx where xx is hex ASCII code.",
+        "default": "$00"
+      }
+    ],
+    "Display": [
+      {
+        "cmd": "DISPLAY",
+        "type": "text",
+        "desc": "Display settings",
+        "syntax": "DISP [{param}]",
+        "help": "Shows TNC parameter values.\n\nNo parameter - all settings\nWith parameter - single setting\n\nExamples:\n  DISP\n  DISP PACLEN\n  DISP TXDELAY"
+      },
+      {
+        "cmd": "JHOST",
+        "type": "text",
+        "desc": "Host mode / JHOST",
+        "syntax": "JHOST ON|OFF",
+        "help": "Enables JHOST binary protocol mode.\n\nWARNING: Changes TNC to binary mode.\nUse only with compatible host software.\n\nDefault: OFF"
+      },
+      {
+        "cmd": "KISS",
+        "type": "text",
+        "desc": "KISS mode",
+        "syntax": "KISS ON|OFF",
+        "help": "Enables KISS protocol mode.\n\nWARNING: Changes TNC to KISS binary protocol.\nRequires RESTART to take effect.\nUse only with KISS-compatible software.\n\nDefault: OFF"
+      }
+    ],
+    "Calibration": [
+      {
+        "cmd": "CALIBRATE",
+        "type": "text",
+        "desc": "Enter calibration mode",
+        "syntax": "CAL",
+        "help": "Enters calibration mode for adjusting transmitter audio levels.\n\nThe TNC transmits alternating mark/space tones (1200/2200 Hz).\nAdjust TX audio for proper deviation.\n\nPress any key to exit."
+      }
+    ],
+    "Reset & Restart": [
+      {
+        "cmd": "RESET",
+        "type": "text",
+        "desc": "Reset to factory defaults",
+        "syntax": "RESET",
+        "help": "Resets ALL parameters to factory defaults.\n\nWARNING: Erases callsign and all settings.\n\nTNC will prompt for MYCALL after RESET."
+      },
+      {
+        "cmd": "RESTART",
+        "type": "text",
+        "desc": "Warm restart",
+        "syntax": "RESTART",
+        "help": "Restarts TNC without clearing parameters.\n\nRequired after changing:\n- KISS mode\n- Some serial port settings\n\nSaves current parameters."
+      }
+    ],
+    "Special Keys": [
+      {
+        "cmd": "Ctrl+C",
+        "type": "key",
+        "desc": "Exit to command mode",
+        "key": "ctrl+C",
+        "help": "Three Ctrl+C characters (with proper timing) return to cmd: prompt.\n\nTiming: silence for CMDTIME, send 3×Ctrl+C within CMDTIME of each other, silence for CMDTIME.\n\nDefault CMDTIME is 1 second."
+      },
+      {
+        "cmd": "Ctrl+X",
+        "type": "key",
+        "desc": "Cancel line (CANLINE)",
+        "key": "ctrl+X",
+        "help": "Cancels (clears) current input line.\n\nDefault CANLINE character."
+      },
+      {
+        "cmd": "Ctrl+Y",
+        "type": "key",
+        "desc": "Toggle packet output (CANPAC)",
+        "key": "ctrl+Y",
+        "help": "Toggles TNC output on/off (bit bucket).\n\nDefault CANPAC character."
+      },
+      {
+        "cmd": "Ctrl+R",
+        "type": "key",
+        "desc": "Redisplay line (REDISPLA)",
+        "key": "ctrl+R",
+        "help": "Redisplays current input line.\n\nDefault REDISPLA character.\nUseful after using DELETE/backspace."
+      },
+      {
+        "cmd": "Ctrl+Q",
+        "type": "key",
+        "desc": "Resume (XON/START)",
+        "key": "ctrl+Q",
+        "help": "Resumes output (XON).\n\nDefault START character for flow control."
+      },
+      {
+        "cmd": "Ctrl+S",
+        "type": "key",
+        "desc": "Pause (XOFF/STOP)",
+        "key": "ctrl+S",
+        "help": "Pauses output (XOFF).\n\nDefault STOP character for flow control."
+      },
+      {
+        "cmd": "Break",
+        "type": "key",
+        "desc": "Send serial BREAK signal",
+        "key": "break",
+        "help": "Sends a serial BREAK signal.\n\nUsed for:\n- Autobaud detection (some TNCs)\n- Exiting transparent mode if CMDTIME=0\n- Hardware reset on some clones"
+      }
+    ]
+  },
+  "connectors": {
+    "Computer Port (RS-232)": "DB-25 male (DTE). Pin 2: TxD (from computer), Pin 3: RxD (to computer), Pin 4: RTS (from computer), Pin 5: CTS (to computer), Pin 6: DSR (to computer), Pin 7: Signal GND, Pin 8: DCD (to computer), Pin 20: DTR (from computer). Standard EIA RS-232C.",
+    "Radio Port": "5-pin DIN 180° female. Pin 1: RX audio in (10K-100K impedance, ~100mV-1V p-p), Pin 2: Ground, Pin 3: PTT out (active low, open collector), Pin 4: TX audio out (AFSK, ~10mV-3V p-p adjustable), Pin 5: Ground.",
+    "Modem Disconnect": "2-pin header. Short to disable modem (allows external modem). Open for internal 1200 baud modem.",
+    "Power": "2-pin or coaxial. +12V DC nominal (9-15V acceptable), ~200mA typical, ~350mA peak. Polarity marked on board. Usually 2.1mm coax, center positive."
+  },
+  "notes": {
+    "standard_config": "TAPR TNC-2 standard: 9600 baud, 7 data bits, Even parity, 1 stop bit (7E1). Modern operation often uses 9600 8N1 with AWLEN 8 and 8BITCONV ON.",
+    "firmware_versions": "Common firmware: TAPR 1.1.8 (1992), TAPR 1.1.9 (1994, adds CW ID, NMEA, enhanced monitoring). Third-party: TheNet (NORD><LINK), G8BPQ, WA8DED, others.",
+    "clones": "Many manufacturers produced TNC-2 compatibles: MFJ (1270B, 1274), PacComm (TINY-2, MICRO-2), Symek (TNC-2H, TNC-2S), AEA (PK-88), Kantronics (KPC-2, KPC-3), GLB (TNC-220), MJF, and dozens more worldwide.",
+    "modem": "Crystal-controlled 1200 baud Bell 202 AFSK modem. Mark: 1200 Hz, Space: 2200 Hz. TCM3105 modem IC standard. Some clones offer 9600 baud G3RUH option.",
+    "processor": "Zilog Z80 CPU @ 4.9152 MHz. Zilog Z80-SIO/0 dual UART. 32K EPROM (2764/27256), 32K SRAM (62256).",
+    "protocol": "Implements AX.25 v1.0 and v2.0 link layer protocol. Supports up to 8 digipeaters in path. Single connection (no multi-connect on standard firmware).",
+    "operating_modes": "Three modes: Command (cmd: prompt), Converse (data entry), Transparent (binary transfer). Most operation in Converse after connecting.",
+    "power_consumption": "Typical 200mA @ 12V (2.4W). Peak during transmit ~350mA. Very efficient for 24/7 operation.",
+    "history": "Designed by TAPR (Tucson Amateur Packet Radio) in 1985. Based on original TAPR TNC (1983). Became de facto standard for packet radio. Licensed to many manufacturers. Still widely used in APRS and emergency communications.",
+    "tnc2_variants": "TNC-2 clones added features: dual ports, mailbox, NET/ROM, multi-connect, GPS, APRS functions. Core command set remained compatible."
+  }
+}

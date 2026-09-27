@@ -77,11 +77,18 @@ Common TNC commands (vary by model):
 - PACKET/CW/RTTY - Switch operating mode
 """),
     ("Keyboard Shortcuts", """
-Ctrl+Q          Quit the application
-Ctrl+K          Connect to serial port
-Ctrl+D          Disconnect from serial port
+Ctrl+Shift+Q    Quit the application
+Ctrl+Shift+K    Connect to serial port
+Ctrl+Shift+D    Disconnect from serial port
+Ctrl+Shift+I    Initialize TNC (handshake + init commands)
+Ctrl+Shift+S    YAPP send file
+Ctrl+Shift+R    YAPP receive file
+Ctrl+Shift+L    Clear connection window
 Ctrl+,          Open Settings
-Ctrl+L          Clear active channel
+Ctrl+A..Z       In TX: send the control character to the TNC
+                (Ctrl+C = command mode, Ctrl+Z, ...). Ctrl+V pastes;
+                Ctrl+C / Ctrl+X copy / cut when text is selected.
+Ctrl+[          In TX: send ESC
 F1              Open this Help window
 """),
     ("Multi-Mode Operation", """
